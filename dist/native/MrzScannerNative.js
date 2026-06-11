@@ -14,11 +14,16 @@ catch (_a) { }
 // ─── Labels d'état ────────────────────────────────────────────────────────────
 function getStatusLabel(state, attempts, maxAttempts, hint) {
     switch (state) {
-        case 'idle': return 'Initialisation…';
-        case 'scanning': return hint;
-        case 'analyzing': return 'Lecture en cours…';
-        case 'success': return '✓ Document reconnu !';
-        case 'failed': return `Scan échoué après ${attempts}/${maxAttempts} tentatives`;
+        case 'idle':
+            return 'Initialisation…';
+        case 'scanning':
+            return hint;
+        case 'analyzing':
+            return 'Lecture en cours…';
+        case 'success':
+            return '✓ Document reconnu !';
+        case 'failed':
+            return `Scan échoué après ${attempts}/${maxAttempts} tentatives`;
     }
 }
 // ─── Composant principal ──────────────────────────────────────────────────────
@@ -46,15 +51,29 @@ export function MrzScannerNative({ api, onSuccess, onError, onClose, maxAttempts
     const pulseLoop = useRef(null);
     function startPulse() {
         pulseLoop.current = Animated.loop(Animated.sequence([
-            Animated.timing(pulseAnim, { toValue: 1.025, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-            Animated.timing(pulseAnim, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+            Animated.timing(pulseAnim, {
+                toValue: 1.025,
+                duration: 700,
+                easing: Easing.inOut(Easing.ease),
+                useNativeDriver: true,
+            }),
+            Animated.timing(pulseAnim, {
+                toValue: 1,
+                duration: 700,
+                easing: Easing.inOut(Easing.ease),
+                useNativeDriver: true,
+            }),
         ]));
         pulseLoop.current.start();
     }
     function flashSuccess() {
         var _a;
         (_a = pulseLoop.current) === null || _a === void 0 ? void 0 : _a.stop();
-        Animated.timing(colorAnim, { toValue: 1, duration: 300, useNativeDriver: false }).start();
+        Animated.timing(colorAnim, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: false,
+        }).start();
     }
     // Capture + recadrage sur les 38% bas (zone MRZ)
     const captureFrame = useCallback(async () => {
@@ -67,14 +86,16 @@ export function MrzScannerNative({ api, onSuccess, onError, onClose, maxAttempts
             });
             if (!photo)
                 return null;
-            const cropped = await manipulateAsync(photo.uri, [{
+            const cropped = await manipulateAsync(photo.uri, [
+                {
                     crop: {
                         originX: 0,
                         originY: Math.floor(photo.height * 0.62),
                         width: photo.width,
                         height: Math.floor(photo.height * 0.38),
                     },
-                }], { compress: 0.85, format: SaveFormat.JPEG });
+                },
+            ], { compress: 0.85, format: SaveFormat.JPEG });
             return { uri: cropped.uri };
         }
         catch (_a) {
@@ -116,7 +137,10 @@ export function MrzScannerNative({ api, onSuccess, onError, onClose, maxAttempts
                                         borderColor,
                                         transform: [{ scale: pulseAnim }],
                                     },
-                                ], children: [scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: getStatusLabel(scanState, attempts, maxAttempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, children: _jsx(Pressable, { style: styles.retryBtn, onPress: () => { reset(); setTimeout(start, 100); }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) }))] }));
+                                ], children: [scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: getStatusLabel(scanState, attempts, maxAttempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, children: _jsx(Pressable, { style: styles.retryBtn, onPress: () => {
+                        reset();
+                        setTimeout(start, 100);
+                    }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) }))] }));
 }
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const FRAME_H = 100;
@@ -129,7 +153,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#000',
         padding: 32,
     },
-    permText: { color: '#fff', fontSize: 16, textAlign: 'center', marginBottom: 20 },
+    permText: {
+        color: '#fff',
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
     permBtn: {
         backgroundColor: '#c8ff00',
         borderRadius: 8,
@@ -137,7 +166,7 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
     },
     permBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
-    overlay: Object.assign({}, StyleSheet.absoluteFillObject),
+    overlay: Object.assign({}, StyleSheet.absoluteFill),
     topMask: { flex: 3, backgroundColor: 'rgba(0,0,0,0.55)' },
     middleRow: { flexDirection: 'row', height: FRAME_H },
     sideMask: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
