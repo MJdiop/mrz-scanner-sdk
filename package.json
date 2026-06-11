@@ -1,0 +1,50 @@
+{
+  "name": "@scanid-africa/mrz-scanner",
+  "version": "1.0.0",
+  "description": "MRZ scanner for React Native (Expo) and React web — powered by ScanID Africa API",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/types/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mrz",
+    "ocr",
+    "passport",
+    "scanner",
+    "react-native",
+    "expo",
+    "africa"
+  ],
+  "author": "ScanID Africa",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ton-username/mrz-scanner-sdk"
+  },
+  "peerDependencies": {
+    "expo-camera": ">=14.0.0",
+    "expo-image-manipulator": ">=11.0.0",
+    "expo-haptics": ">=12.0.0",
+    "react": ">=18.0.0",
+    "react-native": ">=0.73.0"
+  },
+  "peerDependenciesMeta": {
+    "expo-haptics": {
+      "optional": true
+    },
+    "react-native": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.1",
+    "typescript": "^5.0.0"
+  }
+}
