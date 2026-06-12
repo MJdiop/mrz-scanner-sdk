@@ -280,9 +280,9 @@ export function MrzScannerNative({
           >
             <Text style={styles.closeTxt}>
               {enableTorch ? (
-                <MaterialIcons name="flashlight-off" size={24} color="white" />
+                <MaterialIcons name="flashlight-off" size={20} color="white" />
               ) : (
-                <MaterialIcons name="flashlight-on" size={24} color="white" />
+                <MaterialIcons name="flashlight-on" size={20} color="white" />
               )}
             </Text>
           </Pressable>
