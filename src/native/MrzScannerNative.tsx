@@ -272,15 +272,9 @@ export function MrzScannerNative({
 
       {/* Fermer */}
       {onClose && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
+        <>
           <Pressable
-            style={styles.closeBtn}
+            style={[styles.closeBtn, { right: 40 }]}
             onPress={() => setEnableTorch(!enableTorch)}
             hitSlop={12}
           >
@@ -295,7 +289,7 @@ export function MrzScannerNative({
           <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
             <Text style={styles.closeTxt}>✕</Text>
           </Pressable>
-        </View>
+        </>
       )}
     </View>
   );
