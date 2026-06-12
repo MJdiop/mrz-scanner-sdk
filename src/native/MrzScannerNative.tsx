@@ -274,7 +274,7 @@ export function MrzScannerNative({
       {onClose && (
         <>
           <Pressable
-            style={[styles.closeBtn, { right: 40 }]}
+            style={[styles.closeBtn, { right: 100 }]}
             onPress={() => setEnableTorch(!enableTorch)}
             hitSlop={12}
           >

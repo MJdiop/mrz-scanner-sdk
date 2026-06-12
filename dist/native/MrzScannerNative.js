@@ -1,4 +1,4 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useCallback, useRef, useState, } from 'react';
 import { ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text, View, } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
@@ -142,11 +142,7 @@ export function MrzScannerNative({ api, onSuccess, onError, onClose, maxAttempts
                                 ], children: [scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: getStatusLabel(scanState, attempts, maxAttempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, children: _jsx(Pressable, { style: styles.retryBtn, onPress: () => {
                         reset();
                         setTimeout(start, 100);
-                    }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsxs(View, { style: {
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                }, children: [_jsx(Pressable, { style: styles.closeBtn, onPress: () => setEnableTorch(!enableTorch), hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: enableTorch ? (_jsx(MaterialIcons, { name: "flashlight-off", size: 24, color: "white" })) : (_jsx(MaterialIcons, { name: "flashlight-on", size: 24, color: "white" })) }) }), _jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) })] }))] }));
+                    }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsxs(_Fragment, { children: [_jsx(Pressable, { style: [styles.closeBtn, { right: 40 }], onPress: () => setEnableTorch(!enableTorch), hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: enableTorch ? (_jsx(MaterialIcons, { name: "flashlight-off", size: 24, color: "white" })) : (_jsx(MaterialIcons, { name: "flashlight-on", size: 24, color: "white" })) }) }), _jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) })] }))] }));
 }
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const FRAME_H = 100;
