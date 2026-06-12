@@ -181,7 +181,7 @@ export function MrzScannerNative({
   }
 
   const borderColor = colorAnim.interpolate({
-    inputRange: [0, 1],
+    inputRange: [0, 2],
     outputRange: [frameColor, successColor],
   });
 
@@ -208,6 +208,7 @@ export function MrzScannerNative({
         style={StyleSheet.absoluteFill}
         facing="back"
         onCameraReady={onCameraReady}
+        enableTorch
       />
 
       {/* Masques sombres autour de la zone MRZ */}

@@ -123,7 +123,7 @@ export function MrzScannerNative({ api, onSuccess, onError, onClose, maxAttempts
         start();
     }
     const borderColor = colorAnim.interpolate({
-        inputRange: [0, 1],
+        inputRange: [0, 2],
         outputRange: [frameColor, successColor],
     });
     if (!permission)
@@ -131,7 +131,7 @@ export function MrzScannerNative({ api, onSuccess, onError, onClose, maxAttempts
     if (!permission.granted) {
         return (_jsxs(View, { style: styles.permContainer, children: [_jsx(Text, { style: styles.permText, children: "Acc\u00E8s \u00E0 la cam\u00E9ra requis pour scanner le document." }), _jsx(Pressable, { style: styles.permBtn, onPress: requestPermission, children: _jsx(Text, { style: styles.permBtnText, children: "Autoriser la cam\u00E9ra" }) })] }));
     }
-    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: onCameraReady }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [
+    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: onCameraReady, enableTorch: true }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [
                                     styles.frame,
                                     {
                                         borderColor,

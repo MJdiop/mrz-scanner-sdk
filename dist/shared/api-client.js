@@ -1,4 +1,5 @@
-const CLOUD_BASE_URL = 'https://api.scanid.africa';
+const CLOUD_BASE_URL = 'http://localhost:3000';
+// const CLOUD_BASE_URL = 'https://api.scanid.africa'
 /**
  * Résout l'URL de l'endpoint scan selon la config (self-hosted ou cloud).
  */
@@ -14,6 +15,7 @@ function resolveEndpoint(api) {
         : region === 'north-africa'
             ? 'https://na.api.scanid.africa'
             : CLOUD_BASE_URL;
+    console.log('🚀 ~ resolveEndpoint ~ base:', base);
     return `${base}/mrz/scan`;
 }
 /**
