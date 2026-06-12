@@ -15,7 +15,6 @@ function resolveEndpoint(api) {
         : region === 'north-africa'
             ? 'https://na.api.scanid.africa'
             : CLOUD_BASE_URL;
-    console.log('🚀 ~ resolveEndpoint ~ base:', base);
     return `${base}/mrz/scan`;
 }
 /**

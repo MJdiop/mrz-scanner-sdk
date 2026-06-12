@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScanner } from '../shared/useScanner';
 import { sendUriToApi } from '../shared/api-client';
@@ -88,6 +89,7 @@ export function MrzScannerNative({
 }: MrzScannerNativeProps): ReactElement {
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
+  const [enableTorch, setEnableTorch] = useState(false);
 
   // Animations
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -208,7 +210,7 @@ export function MrzScannerNative({
         style={StyleSheet.absoluteFill}
         facing="back"
         onCameraReady={onCameraReady}
-        enableTorch
+        enableTorch={enableTorch}
       />
 
       {/* Masques sombres autour de la zone MRZ */}
@@ -270,9 +272,24 @@ export function MrzScannerNative({
 
       {/* Fermer */}
       {onClose && (
-        <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
-          <Text style={styles.closeTxt}>✕</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <Pressable
+            style={styles.closeBtn}
+            onPress={() => setEnableTorch(!enableTorch)}
+            hitSlop={12}
+          >
+            <Text style={styles.closeTxt}>
+              {enableTorch ? (
+                <MaterialIcons name="flashlight-off" size={24} color="white" />
+              ) : (
+                <MaterialIcons name="flashlight-on" size={24} color="white" />
+              )}
+            </Text>
+          </Pressable>
+          <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
+            <Text style={styles.closeTxt}>✕</Text>
+          </Pressable>
+        </View>
       )}
     </View>
   );
