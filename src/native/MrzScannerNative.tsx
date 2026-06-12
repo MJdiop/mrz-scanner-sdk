@@ -272,7 +272,13 @@ export function MrzScannerNative({
 
       {/* Fermer */}
       {onClose && (
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
           <Pressable
             style={styles.closeBtn}
             onPress={() => setEnableTorch(!enableTorch)}
