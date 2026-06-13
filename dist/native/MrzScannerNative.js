@@ -132,12 +132,33 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
             // 3. OCR local via expo-mlkit-ocr
             // recognizeText retourne { text: string, blocks: [...] }
             const ocrResult = await ExpoMlkitOcr.recognizeText(cropped.uri);
-            // 4. Extraire le texte brut de tous les blocs
-            const fullText = ocrResult
-                .map((block) => { var _a, _b; return (_b = (_a = block.text) !== null && _a !== void 0 ? _a : block.value) !== null && _b !== void 0 ? _b : ''; })
-                .join('\n');
+            // ── DEBUG — à retirer en production ─────────────────────────────────
+            console.log('[MRZ] Photo size:', photo.width, 'x', photo.height);
+            console.log('[MRZ] OCR raw result:', JSON.stringify(ocrResult));
+            // // 4. Extraire le texte brut de tous les blocs
+            // const fullText = ocrResult
+            //   .map((block: any) => block.text ?? block.value ?? '')
+            //   .join('\n');
+            // ✅ Correct — extraire text + blocks séparément
+            let fullText = '';
+            let blocks;
+            if (typeof ocrResult === 'string') {
+                fullText = ocrResult;
+            }
+            else if ((ocrResult === null || ocrResult === void 0 ? void 0 : ocrResult.text) !== undefined) {
+                fullText = ocrResult.text; // texte global
+                blocks = ocrResult.blocks; // blocs individuels ← crucial pour Android
+            }
+            else if (Array.isArray(ocrResult)) {
+                fullText = ocrResult.map((b) => { var _a; return (_a = b.text) !== null && _a !== void 0 ? _a : ''; }).join('\n');
+                blocks = ocrResult;
+            }
+            console.log('[MRZ] fullText:', fullText);
             // 5. Parser la MRZ depuis le texte OCR
-            const result = mapMlkitResult(fullText);
+            // const result: MrzResult | null = mapMlkitResult(fullText);
+            // ✅ Correct
+            const result = mapMlkitResult(fullText, blocks);
+            console.log('[MRZ] Parse result:', result ? JSON.stringify(result) : 'null');
             if (!result || !isMountedRef.current) {
                 // MRZ non détectée → retry
                 attemptsRef.current += 1;
