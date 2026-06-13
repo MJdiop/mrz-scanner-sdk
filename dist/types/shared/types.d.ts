@@ -55,6 +55,8 @@ export interface MrzScannerNativeProps extends MrzScannerBaseProps {
     frameColor?: string;
     /** Couleur du cadre en cas de succès (défaut: "#34d399") */
     successColor?: string;
+    /** Afficher le feedback visuel sur la zone détectée (défaut: true) */
+    enableMRZFeedBack?: boolean;
 }
 export interface MrzScannerWebProps extends MrzScannerBaseProps {
     /** Largeur du composant (défaut: "100%") */
