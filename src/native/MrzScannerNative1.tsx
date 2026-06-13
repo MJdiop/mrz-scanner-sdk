@@ -160,7 +160,7 @@ export function MrzScannerNative({
   );
 
   const { scanState, attempts, start, reset } = useScanner({
-    api,
+    api: api!,
     maxAttempts,
     scanIntervalMs,
     onSuccess: handleSuccess,
