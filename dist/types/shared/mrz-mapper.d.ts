@@ -1,13 +1,9 @@
-import type { MrzResult } from './types';
+import type { MrzFields, MrzResult } from './types';
 /**
- * Mappe les résultats bruts de vision-camera-mrz-scanner
- * vers notre MrzResult unifié.
- *
- * vision-camera-mrz-scanner retourne un objet MRZProperties :
- * {
- *   documentType, surname, givenNames, nationality,
- *   birthDate, expirationDate, documentNumber,
- *   sex, personalNumber, issuingState, ...
- * }
+ * Reçoit le texte brut OCR de MLKit,
+ * extrait les lignes MRZ candidates et les parse.
+ * Retourne null si aucune MRZ valide trouvée.
  */
-export declare function mapVisionCameraResult(raw: Record<string, string>): MrzResult;
+export declare function mapMlkitResult(ocrText: string): MrzResult | null;
+declare function normalizeFields(f: Record<string, string | null>): MrzFields;
+export { normalizeFields };
