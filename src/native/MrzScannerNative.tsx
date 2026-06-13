@@ -21,11 +21,11 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import type { MrzScannerNativeProps, MrzResult } from '../shared/types';
 import { mapMlkitResult } from '../shared/mrz-mapper';
 
-// Import conditionnel expo-mlkit-ocr
 let ExpoMlkitOcr: any = null;
-try {
-  ExpoMlkitOcr = require('expo-mlkit-ocr').default;
-} catch {}
+
+// Après — fallback sur le module entier
+const mlkit = require('expo-mlkit-ocr');
+ExpoMlkitOcr = mlkit.default ?? mlkit; // → { recognizeText, isSupported }
 
 // Import conditionnel Haptics
 let Haptics: any = null;
