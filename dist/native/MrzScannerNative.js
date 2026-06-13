@@ -1,15 +1,14 @@
+var _a;
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useCallback, useEffect, useRef, useState, } from 'react';
 import { ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text, View, } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { mapMlkitResult } from '../shared/mrz-mapper';
-// Import conditionnel expo-mlkit-ocr
 let ExpoMlkitOcr = null;
-try {
-    ExpoMlkitOcr = require('expo-mlkit-ocr').default;
-}
-catch (_a) { }
+// Après — fallback sur le module entier
+const mlkit = require('expo-mlkit-ocr');
+ExpoMlkitOcr = (_a = mlkit.default) !== null && _a !== void 0 ? _a : mlkit; // → { recognizeText, isSupported }
 // Import conditionnel Haptics
 let Haptics = null;
 try {
