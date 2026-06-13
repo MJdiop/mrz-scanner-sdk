@@ -55,7 +55,7 @@ export type ApiConfig = SelfHostedConfig | CloudConfig;
 
 export interface MrzScannerBaseProps {
   /** Configuration de connexion à l'API */
-  api: ApiConfig;
+  api?: ApiConfig;
   /** Appelé dès qu'une MRZ valide est détectée */
   onSuccess: (result: MrzResult) => void;
   /** Appelé si le scan échoue après MAX_ATTEMPTS tentatives */
