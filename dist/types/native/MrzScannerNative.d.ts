@@ -3,17 +3,17 @@ import type { MrzScannerNativeProps } from '../shared/types';
 /**
  * MrzScannerNative
  *
- * Scan MRZ 100% LOCAL :
- *   expo-camera → capture frame → expo-image-manipulator (crop) →
- *   MLKit OCR (@infinitered/react-native-mlkit-ocr) →
- *   mrz-mapper (extract lignes MRZ) → mrz-fast (parse + validate) →
- *   onSuccess(MrzResult)
+ * Scan MRZ 100% LOCAL — aucun appel réseau, fonctionne hors ligne.
  *
- * Aucun appel réseau — fonctionne hors ligne.
- * Pas de babel.config.js requis.
+ * Flow :
+ *   expo-camera → takePictureAsync()
+ *     → manipulateAsync() crop 38% bas (zone MRZ)
+ *     → ExpoMlkitOcr.recognizeText() OCR local
+ *     → mrz-mapper extrait + parse les lignes MRZ
+ *     → onSuccess(MrzResult)
  *
- * Peer deps :
- *   npx expo install expo-camera expo-image-manipulator @infinitered/react-native-mlkit-ocr
+ * Peer deps dans le projet consommateur :
+ *   npx expo install expo-camera expo-image-manipulator expo-mlkit-ocr
  *   npx expo run:ios
  */
 export declare function MrzScannerNative({ onSuccess, onError, onClose, hint, frameColor, successColor, }: MrzScannerNativeProps): ReactElement;

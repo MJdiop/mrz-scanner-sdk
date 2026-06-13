@@ -4,10 +4,10 @@ import { ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, T
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { mapMlkitResult } from '../shared/mrz-mapper';
-// Import conditionnel MLKit OCR
-let MlkitOcr = null;
+// Import conditionnel expo-mlkit-ocr
+let ExpoMlkitOcr = null;
 try {
-    MlkitOcr = require('@infinitered/react-native-mlkit-ocr').default;
+    ExpoMlkitOcr = require('expo-mlkit-ocr').default;
 }
 catch (_a) { }
 // Import conditionnel Haptics
@@ -35,17 +35,17 @@ function getStatusLabel(state, attempts, hint) {
 /**
  * MrzScannerNative
  *
- * Scan MRZ 100% LOCAL :
- *   expo-camera → capture frame → expo-image-manipulator (crop) →
- *   MLKit OCR (@infinitered/react-native-mlkit-ocr) →
- *   mrz-mapper (extract lignes MRZ) → mrz-fast (parse + validate) →
- *   onSuccess(MrzResult)
+ * Scan MRZ 100% LOCAL — aucun appel réseau, fonctionne hors ligne.
  *
- * Aucun appel réseau — fonctionne hors ligne.
- * Pas de babel.config.js requis.
+ * Flow :
+ *   expo-camera → takePictureAsync()
+ *     → manipulateAsync() crop 38% bas (zone MRZ)
+ *     → ExpoMlkitOcr.recognizeText() OCR local
+ *     → mrz-mapper extrait + parse les lignes MRZ
+ *     → onSuccess(MrzResult)
  *
- * Peer deps :
- *   npx expo install expo-camera expo-image-manipulator @infinitered/react-native-mlkit-ocr
+ * Peer deps dans le projet consommateur :
+ *   npx expo install expo-camera expo-image-manipulator expo-mlkit-ocr
  *   npx expo run:ios
  */
 export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez la zone MRZ dans le cadre', frameColor = '#c8ff00', successColor = '#34d399', }) {
@@ -128,8 +128,9 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
                 return;
             if (isMountedRef.current)
                 setScanState('analyzing');
-            // 3. OCR local via MLKit
-            const ocrResult = await MlkitOcr.detectFromUri(cropped.uri);
+            // 3. OCR local via expo-mlkit-ocr
+            // recognizeText retourne { text: string, blocks: [...] }
+            const ocrResult = await ExpoMlkitOcr.recognizeText(cropped.uri);
             // 4. Extraire le texte brut de tous les blocs
             const fullText = ocrResult
                 .map((block) => { var _a, _b; return (_b = (_a = block.text) !== null && _a !== void 0 ? _a : block.value) !== null && _b !== void 0 ? _b : ''; })
@@ -185,6 +186,9 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
         colorAnim.setValue(0);
         pulseAnim.setValue(1);
         setScanState('idle');
+    }
+    if (!ExpoMlkitOcr) {
+        return (_jsxs(View, { style: styles.errorContainer, children: [_jsx(Text, { style: styles.errorTitle, children: "\u26A0\uFE0F Peer dep manquant" }), _jsx(Text, { style: styles.errorText, children: "Installe expo-mlkit-ocr dans ton projet :" }), _jsx(Text, { style: styles.errorCode, children: "npx expo install expo-mlkit-ocr" }), onClose && (_jsx(Pressable, { style: styles.permBtn, onPress: onClose, children: _jsx(Text, { style: styles.permBtnText, children: "Fermer" }) }))] }));
     }
     // ── Permissions ─────────────────────────────────────────────────────────────
     if (!permission)
@@ -258,6 +262,34 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0,0,0,0.8)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 4,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#080810',
+        padding: 32,
+    },
+    errorTitle: {
+        color: '#ff4d6d',
+        fontSize: 20,
+        fontWeight: '700',
+        marginBottom: 12,
+    },
+    errorText: {
+        color: '#f0ede6',
+        fontSize: 14,
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    errorCode: {
+        backgroundColor: '#13131f',
+        color: '#c8ff00',
+        fontSize: 12,
+        padding: 12,
+        borderRadius: 8,
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+        marginBottom: 24,
     },
     retryRow: {
         position: 'absolute',
