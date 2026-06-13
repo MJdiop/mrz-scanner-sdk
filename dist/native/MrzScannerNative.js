@@ -1,10 +1,11 @@
 var _a;
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useCallback, useEffect, useRef, useState, } from 'react';
 import { ActivityIndicator, Animated, Easing, Platform, Pressable, StyleSheet, Text, View, } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { mapMlkitResult } from '../shared/mrz-mapper';
+import { MaterialIcons } from '@expo/vector-icons';
 let ExpoMlkitOcr = null;
 // Après — fallback sur le module entier
 const mlkit = require('expo-mlkit-ocr');
@@ -51,6 +52,7 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
     const [permission, requestPermission] = useCameraPermissions();
     const [scanState, setScanState] = useState('idle');
     const [attempts, setAttempts] = useState(0);
+    const [enableTorch, setEnableTorch] = useState(false);
     const cameraRef = useRef(null);
     const intervalRef = useRef(null);
     const isAnalyzingRef = useRef(false);
@@ -199,7 +201,7 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
         inputRange: [0, 1],
         outputRange: [frameColor, successColor],
     });
-    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [
+    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan, enableTorch: enableTorch }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [
                                     styles.frame,
                                     {
                                         borderColor,
@@ -207,8 +209,8 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
                                     },
                                 ], children: [scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: getStatusLabel(scanState, attempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, pointerEvents: "box-none", children: _jsx(Pressable, { style: styles.retryBtn, onPress: () => {
                         reset();
-                        setTimeout(startScan, 100);
-                    }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) }))] }));
+                        setTimeout(startScan, 200);
+                    }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsxs(_Fragment, { children: [_jsx(Pressable, { style: [styles.closeBtn, { right: 100 }], onPress: () => setEnableTorch(!enableTorch), hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: enableTorch ? (_jsx(MaterialIcons, { name: "flashlight-off", size: 20, color: "white" })) : (_jsx(MaterialIcons, { name: "flashlight-on", size: 20, color: "white" })) }) }), _jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) })] }))] }));
 }
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#000' },
