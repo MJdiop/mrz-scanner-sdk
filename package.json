@@ -33,13 +33,21 @@
     "expo-haptics": ">=12.0.0",
     "expo-image-manipulator": ">=11.0.0",
     "react": ">=18.0.0",
-    "react-native": ">=0.73.0"
+    "react-native": ">=0.73.0",
+    "react-native-vision-camera": ">=4.0.0",
+    "vision-camera-mrz-scanner": ">=1.0.0"
   },
   "peerDependenciesMeta": {
     "expo-haptics": {
       "optional": true
     },
     "react-native": {
+      "optional": true
+    },
+    "react-native-vision-camera": {
+      "optional": true
+    },
+    "vision-camera-mrz-scanner": {
       "optional": true
     }
   },

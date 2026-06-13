@@ -1,353 +1,140 @@
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactElement,
-} from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  Easing,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useCallback, type ReactElement } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { useScanner } from '../shared/useScanner';
-import { sendUriToApi } from '../shared/api-client';
-import type {
-  ApiConfig,
-  MrzResult,
-  MrzScannerNativeProps,
-  ScanState,
-} from '../shared/types';
+import type { MrzScannerNativeProps } from '../shared/types';
+import { mapVisionCameraResult } from '../shared/mrz-mapper';
+
+// Import conditionnel — évite le crash si vision-camera-mrz-scanner
+// n'est pas installé dans le projet consommateur
+let MRZScanner: any = null;
+let hasMrzScanner = false;
+
+try {
+  const mod = require('vision-camera-mrz-scanner');
+  MRZScanner = mod.MRZScanner;
+  hasMrzScanner = true;
+} catch {
+  hasMrzScanner = false;
+}
 
 // Tentative d'import haptics — optionnel
-let Haptics: {
-  notificationAsync: (t: unknown) => Promise<void>;
-  NotificationFeedbackType: { Success: unknown };
-} | null = null;
+let Haptics: any = null;
 try {
   Haptics = require('expo-haptics');
 } catch {}
 
-// ─── Labels d'état ────────────────────────────────────────────────────────────
-
-function getStatusLabel(
-  state: ScanState,
-  attempts: number,
-  maxAttempts: number,
-  hint: string,
-): string {
-  switch (state) {
-    case 'idle':
-      return 'Initialisation…';
-    case 'scanning':
-      return hint;
-    case 'analyzing':
-      return 'Lecture en cours…';
-    case 'success':
-      return '✓ Document reconnu !';
-    case 'failed':
-      return `Scan échoué après ${attempts}/${maxAttempts} tentatives`;
-  }
-}
-
-// ─── Composant principal ──────────────────────────────────────────────────────
-
 /**
  * MrzScannerNative
  *
- * Composant React Native (Expo) de scan MRZ automatique.
- * Démarre dès que la caméra est prête — aucun bouton requis.
+ * Scan MRZ 100% LOCAL via vision-camera-mrz-scanner + MLKit.
+ * Aucun appel réseau — fonctionne hors ligne.
+ * Compatible Expo dev build (pas Expo Go).
+ *
+ * Peer deps requis dans le projet consommateur :
+ *   npx expo install react-native-vision-camera vision-camera-mrz-scanner
  *
  * Usage:
  * ```tsx
  * <MrzScannerNative
- *   api={{ mode: 'selfhosted', apiUrl: 'http://192.168.1.10:3000' }}
  *   onSuccess={(result) => console.log(result.fields)}
  *   onClose={() => navigation.goBack()}
  * />
  * ```
  */
 export function MrzScannerNative({
-  api,
   onSuccess,
   onError,
   onClose,
-  maxAttempts = 10,
-  scanIntervalMs = 1500,
   hint = 'Alignez la zone MRZ dans le cadre',
-  frameColor = '#FFFFFF',
+  frameColor = '#c8ff00',
   successColor = '#34d399',
+  enableMRZFeedBack = true,
 }: MrzScannerNativeProps): ReactElement {
-  const [permission, requestPermission] = useCameraPermissions();
-  const cameraRef = useRef<CameraView>(null);
-  const [enableTorch, setEnableTorch] = useState(false);
-
-  // Animations
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const colorAnim = useRef(new Animated.Value(0)).current;
-  const pulseLoop = useRef<Animated.CompositeAnimation | null>(null);
-
-  function startPulse() {
-    pulseLoop.current = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.025,
-          duration: 700,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 700,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]),
+  // ── Erreur si peer dep manquant ─────────────────────────────────────────────
+  if (!hasMrzScanner || !MRZScanner) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>⚠️ Peer dep manquant</Text>
+        <Text style={styles.errorText}>
+          Installe les dépendances requises dans ton projet :
+        </Text>
+        <Text style={styles.errorCode}>
+          npx expo install react-native-vision-camera vision-camera-mrz-scanner
+        </Text>
+        {onClose && (
+          <Pressable style={styles.closeBtn} onPress={onClose}>
+            <Text style={styles.closeBtnText}>Fermer</Text>
+          </Pressable>
+        )}
+      </View>
     );
-    pulseLoop.current.start();
   }
 
-  function flashSuccess() {
-    pulseLoop.current?.stop();
-    Animated.timing(colorAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }
+  // ── Callback déclenché par vision-camera-mrz-scanner ─────────────────────
+  const handleMrzResults = useCallback(
+    (rawResults: Record<string, string>) => {
+      try {
+        // vision-camera-mrz-scanner appelle ce callback plusieurs fois
+        // on vérifie qu'on a au moins un documentNumber valide
+        if (!rawResults?.documentNumber) return;
 
-  // Capture + recadrage sur les 38% bas (zone MRZ)
-  const captureFrame = useCallback(async () => {
-    if (!cameraRef.current) return null;
-    try {
-      const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.85,
-        skipProcessing: true,
-      });
-      if (!photo) return null;
+        const result = mapVisionCameraResult(rawResults);
 
-      const cropped = await manipulateAsync(
-        photo.uri,
-        [
-          {
-            crop: {
-              originX: 0,
-              originY: Math.floor(photo.height * 0.62),
-              width: photo.width,
-              height: Math.floor(photo.height * 0.38),
-            },
-          },
-        ],
-        { compress: 0.85, format: SaveFormat.JPEG },
-      );
-      return { uri: cropped.uri };
-    } catch {
-      return null;
-    }
-  }, []);
+        // Feedback haptique si disponible
+        Haptics?.notificationAsync?.(Haptics.NotificationFeedbackType?.Success);
 
-  const handleSuccess = useCallback(
-    (result: MrzResult) => {
-      flashSuccess();
-      Haptics?.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Petit délai pour laisser voir le feedback visuel avant de fermer
-      setTimeout(() => onSuccess(result), 500);
+        onSuccess(result);
+      } catch (err) {
+        onError?.(
+          err instanceof Error ? err : new Error('Erreur de parsing MRZ'),
+        );
+      }
     },
-    [onSuccess],
+    [onSuccess, onError],
   );
 
-  const { scanState, attempts, start, reset } = useScanner({
-    api,
-    maxAttempts,
-    scanIntervalMs,
-    onSuccess: handleSuccess,
-    onError,
-    captureFrame,
-    sendToApi: async (cfg: ApiConfig, payload: string | Blob) =>
-      sendUriToApi(cfg, payload as string),
-  });
-
-  // Démarrer quand la caméra est prête
-  function onCameraReady() {
-    startPulse();
-    start();
-  }
-
-  const borderColor = colorAnim.interpolate({
-    inputRange: [0, 2],
-    outputRange: [frameColor, successColor],
-  });
-
-  if (!permission) return <View style={styles.container} />;
-
-  if (!permission.granted) {
-    return (
-      <View style={styles.permContainer}>
-        <Text style={styles.permText}>
-          Accès à la caméra requis pour scanner le document.
-        </Text>
-        <Pressable style={styles.permBtn} onPress={requestPermission}>
-          <Text style={styles.permBtnText}>Autoriser la caméra</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
+  // ── Rendu ──────────────────────────────────────────────────────────────────
   return (
     <View style={styles.container}>
-      {/* Caméra plein écran */}
-      <CameraView
-        ref={cameraRef}
+      {/* vision-camera-mrz-scanner gère tout :
+          caméra, frame processor MLKit, overlay de détection */}
+      <MRZScanner
+        mrzFinalResults={handleMrzResults}
+        enableMRZFeedBack={enableMRZFeedBack}
+        enableBoundingBox={true}
         style={StyleSheet.absoluteFill}
-        facing="back"
-        onCameraReady={onCameraReady}
-        enableTorch={enableTorch}
       />
 
-      {/* Masques sombres autour de la zone MRZ */}
-      <View style={styles.overlay} pointerEvents="none">
-        <View style={styles.topMask} />
-        <View style={styles.middleRow}>
-          <View style={styles.sideMask} />
-
-          {/* Cadre MRZ animé */}
-          <Animated.View
-            style={[
-              styles.frame,
-              {
-                borderColor,
-                transform: [{ scale: pulseAnim }],
-              },
-            ]}
-          >
-            {scanState === 'analyzing' && (
-              <ActivityIndicator
-                size="small"
-                color="rgba(255,255,255,0.8)"
-                style={styles.spinner}
-              />
-            )}
-            {scanState === 'success' && (
-              <Text style={[styles.successIcon, { color: successColor }]}>
-                ✓
-              </Text>
-            )}
-          </Animated.View>
-
-          <View style={styles.sideMask} />
-        </View>
-        <View style={styles.bottomMask} />
+      {/* Hint */}
+      <View style={styles.hintContainer} pointerEvents="none">
+        <Text style={styles.hintText}>{hint}</Text>
       </View>
 
-      {/* Statut */}
-      <View style={styles.statusBar} pointerEvents="none">
-        <Text style={styles.statusText}>
-          {getStatusLabel(scanState, attempts, maxAttempts, hint)}
-        </Text>
-      </View>
-
-      {/* Retry si échec */}
-      {scanState === 'failed' && (
-        <View style={styles.retryRow}>
-          <Pressable
-            style={styles.retryBtn}
-            onPress={() => {
-              reset();
-              setTimeout(start, 100);
-            }}
-          >
-            <Text style={styles.retryText}>Réessayer</Text>
-          </Pressable>
-        </View>
-      )}
-
-      {/* Fermer */}
+      {/* Bouton fermer */}
       {onClose && (
-        <>
-          <Pressable
-            style={[styles.closeBtn, { right: 100 }]}
-            onPress={() => setEnableTorch(!enableTorch)}
-            hitSlop={12}
-          >
-            <Text style={styles.closeTxt}>
-              {enableTorch ? (
-                <MaterialIcons name="flashlight-off" size={20} color="white" />
-              ) : (
-                <MaterialIcons name="flashlight-on" size={20} color="white" />
-              )}
-            </Text>
-          </Pressable>
-          <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
-            <Text style={styles.closeTxt}>✕</Text>
-          </Pressable>
-        </>
+        <Pressable style={styles.closeIcon} onPress={onClose} hitSlop={12}>
+          <Text style={styles.closeIconText}>✕</Text>
+        </Pressable>
       )}
     </View>
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const FRAME_H = 100;
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
-
-  permContainer: {
+  container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#000',
-    padding: 32,
   },
-  permText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  permBtn: {
-    backgroundColor: '#c8ff00',
-    borderRadius: 8,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  permBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
 
-  overlay: { ...StyleSheet.absoluteFill },
-  topMask: { flex: 3, backgroundColor: 'rgba(0,0,0,0.55)' },
-  middleRow: { flexDirection: 'row', height: FRAME_H },
-  sideMask: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
-  bottomMask: { flex: 2, backgroundColor: 'rgba(0,0,0,0.55)' },
-
-  frame: {
-    flex: 5,
-    borderWidth: 2,
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  spinner: { position: 'absolute', top: 8, right: 8 },
-  successIcon: { fontSize: 28, fontWeight: '700' },
-
-  statusBar: {
+  hintContainer: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 80,
     left: 0,
     right: 0,
     alignItems: 'center',
     paddingHorizontal: 32,
   },
-  statusText: {
+  hintText: {
     color: '#fff',
     fontSize: 14,
     textAlign: 'center',
@@ -356,26 +143,58 @@ const styles = StyleSheet.create({
     textShadowRadius: 4,
   },
 
-  retryRow: {
-    position: 'absolute',
-    bottom: 50,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  retryBtn: {
-    backgroundColor: '#c8ff00',
-    borderRadius: 8,
-    paddingHorizontal: 28,
-    paddingVertical: 12,
-  },
-  retryText: { color: '#000', fontWeight: '700', fontSize: 15 },
-
-  closeBtn: {
+  closeIcon: {
     position: 'absolute',
     top: Platform.OS === 'ios' ? 56 : 20,
     right: 20,
     padding: 10,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 20,
   },
-  closeTxt: { color: '#fff', fontSize: 22 },
+  closeIconText: {
+    color: '#fff',
+    fontSize: 18,
+  },
+
+  // Erreur peer dep manquant
+  errorContainer: {
+    flex: 1,
+    backgroundColor: '#080810',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorTitle: {
+    color: '#ff4d6d',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#f0ede6',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  errorCode: {
+    backgroundColor: '#13131f',
+    color: '#c8ff00',
+    fontSize: 12,
+    padding: 12,
+    borderRadius: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  closeBtn: {
+    backgroundColor: '#c8ff00',
+    borderRadius: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+  closeBtnText: {
+    color: '#000',
+    fontWeight: '700',
+    fontSize: 15,
+  },
 });

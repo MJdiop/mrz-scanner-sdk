@@ -1,27 +1,27 @@
 // ─── Résultat MRZ ─────────────────────────────────────────────────────────────
 
-export type DocumentType = 'TD1' | 'TD2' | 'TD3' | 'DL'
+export type DocumentType = 'TD1' | 'TD2' | 'TD3' | 'DL';
 
 export interface MrzFields {
-  surname: string | null
-  givenNames: string | null
-  nationality: string | null
-  issuingState: string | null
+  surname: string | null;
+  givenNames: string | null;
+  nationality: string | null;
+  issuingState: string | null;
   /** Date de naissance au format YYMMDD */
-  dateOfBirth: string | null
-  sex: 'male' | 'female' | 'unspecified' | null
+  dateOfBirth: string | null;
+  sex: 'male' | 'female' | 'unspecified' | null;
   /** Date d'expiration au format YYMMDD */
-  expirationDate: string | null
-  documentNumber: string | null
-  personalNumber: string | null
+  expirationDate: string | null;
+  documentNumber: string | null;
+  personalNumber: string | null;
 }
 
 export interface MrzResult {
-  documentType: DocumentType
-  documentLabel: string
+  documentType: DocumentType;
+  documentLabel: string;
   /** true si mrz-fast a auto-corrigé des erreurs OCR (O↔0, I↔1…) */
-  corrected: boolean
-  fields: MrzFields
+  corrected: boolean;
+  fields: MrzFields;
 }
 
 export type ScanState =
@@ -29,63 +29,65 @@ export type ScanState =
   | 'scanning'
   | 'analyzing'
   | 'success'
-  | 'failed'
+  | 'failed';
 
 // ─── Configuration API ────────────────────────────────────────────────────────
 
-export type ApiMode = 'selfhosted' | 'cloud'
+export type ApiMode = 'selfhosted' | 'cloud';
 
 export interface SelfHostedConfig {
-  mode: 'selfhosted'
+  mode: 'selfhosted';
   /** URL de votre instance mrz-nest, ex: "http://192.168.1.10:3000" */
-  apiUrl: string
+  apiUrl: string;
 }
 
 export interface CloudConfig {
-  mode: 'cloud'
+  mode: 'cloud';
   /** Clé API obtenue sur scanid.africa */
-  apiKey: string
+  apiKey: string;
   /** Région optionnelle : "west-africa" | "north-africa" | "auto" */
-  region?: 'west-africa' | 'north-africa' | 'auto'
+  region?: 'west-africa' | 'north-africa' | 'auto';
 }
 
-export type ApiConfig = SelfHostedConfig | CloudConfig
+export type ApiConfig = SelfHostedConfig | CloudConfig;
 
 // ─── Props communes aux deux composants ──────────────────────────────────────
 
 export interface MrzScannerBaseProps {
   /** Configuration de connexion à l'API */
-  api: ApiConfig
+  api: ApiConfig;
   /** Appelé dès qu'une MRZ valide est détectée */
-  onSuccess: (result: MrzResult) => void
+  onSuccess: (result: MrzResult) => void;
   /** Appelé si le scan échoue après MAX_ATTEMPTS tentatives */
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void;
   /** Appelé à chaque fermeture du scanner */
-  onClose?: () => void
+  onClose?: () => void;
   /** Nombre max de tentatives avant d'abandonner (défaut: 10) */
-  maxAttempts?: number
+  maxAttempts?: number;
   /** Intervalle entre deux captures en ms (défaut: 1500) */
-  scanIntervalMs?: number
+  scanIntervalMs?: number;
 }
 
 // ─── Props React Native ───────────────────────────────────────────────────────
 
 export interface MrzScannerNativeProps extends MrzScannerBaseProps {
   /** Texte affiché sous le cadre (défaut: "Alignez la zone MRZ dans le cadre") */
-  hint?: string
+  hint?: string;
   /** Couleur du cadre de scan (défaut: "#FFFFFF") */
-  frameColor?: string
+  frameColor?: string;
   /** Couleur du cadre en cas de succès (défaut: "#34d399") */
-  successColor?: string
+  successColor?: string;
+  /** Afficher le feedback visuel sur la zone détectée (défaut: true) */
+  enableMRZFeedBack?: boolean;
 }
 
 // ─── Props React Web ──────────────────────────────────────────────────────────
 
 export interface MrzScannerWebProps extends MrzScannerBaseProps {
   /** Largeur du composant (défaut: "100%") */
-  width?: string | number
+  width?: string | number;
   /** Hauteur du composant (défaut: "480px") */
-  height?: string | number
+  height?: string | number;
   /** Classe CSS additionnelle sur le conteneur */
-  className?: string
+  className?: string;
 }

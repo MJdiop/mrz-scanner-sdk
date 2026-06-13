@@ -1,12 +1,12 @@
 // ─── Composants ──────────────────────────────────────────────────────────────
-export { MrzScannerNative } from './native/MrzScannerNative'
-export { MrzScannerWeb }    from './web/MrzScannerWeb'
+export { MrzScannerNative } from './native/MrzScannerNative';
+export { MrzScannerWeb } from './web/MrzScannerWeb';
 
 // ─── Hook bas niveau (pour usage custom) ─────────────────────────────────────
-export { useScanner } from './shared/useScanner'
+export { useScanner } from './shared/useScanner';
 
 // ─── Client API (pour usage standalone) ──────────────────────────────────────
-export { sendImageToApi, sendUriToApi } from './shared/api-client'
+export { sendImageToApi, sendUriToApi } from './shared/api-client';
 
 // ─── Types publics ────────────────────────────────────────────────────────────
 export type {
@@ -24,4 +24,4 @@ export type {
   MrzScannerNativeProps,
   MrzScannerWebProps,
   MrzScannerBaseProps,
-} from './shared/types'
+} from './shared/types';
