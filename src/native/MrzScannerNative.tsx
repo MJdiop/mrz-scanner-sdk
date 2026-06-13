@@ -20,6 +20,7 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 import type { MrzScannerNativeProps, MrzResult } from '../shared/types';
 import { mapMlkitResult } from '../shared/mrz-mapper';
+import { MaterialIcons } from '@expo/vector-icons';
 
 let ExpoMlkitOcr: any = null;
 
@@ -84,6 +85,7 @@ export function MrzScannerNative({
   const [permission, requestPermission] = useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [attempts, setAttempts] = useState(0);
+  const [enableTorch, setEnableTorch] = useState(false);
 
   const cameraRef = useRef<CameraView>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -280,6 +282,7 @@ export function MrzScannerNative({
         style={StyleSheet.absoluteFill}
         facing="back"
         onCameraReady={startScan}
+        enableTorch={enableTorch}
       />
 
       {/* Overlay masques */}
@@ -331,7 +334,7 @@ export function MrzScannerNative({
             style={styles.retryBtn}
             onPress={() => {
               reset();
-              setTimeout(startScan, 100);
+              setTimeout(startScan, 200);
             }}
           >
             <Text style={styles.retryText}>Réessayer</Text>
@@ -341,9 +344,24 @@ export function MrzScannerNative({
 
       {/* Bouton fermer */}
       {onClose && (
-        <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
-          <Text style={styles.closeTxt}>✕</Text>
-        </Pressable>
+        <>
+          <Pressable
+            style={[styles.closeBtn, { right: 100 }]}
+            onPress={() => setEnableTorch(!enableTorch)}
+            hitSlop={12}
+          >
+            <Text style={styles.closeTxt}>
+              {enableTorch ? (
+                <MaterialIcons name="flashlight-off" size={20} color="white" />
+              ) : (
+                <MaterialIcons name="flashlight-on" size={20} color="white" />
+              )}
+            </Text>
+          </Pressable>
+          <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={12}>
+            <Text style={styles.closeTxt}>✕</Text>
+          </Pressable>
+        </>
       )}
     </View>
   );
