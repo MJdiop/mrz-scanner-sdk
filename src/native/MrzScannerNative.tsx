@@ -21,10 +21,10 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import type { MrzScannerNativeProps, MrzResult } from '../shared/types';
 import { mapMlkitResult } from '../shared/mrz-mapper';
 
-// Import conditionnel MLKit OCR
-let MlkitOcr: any = null;
+// Import conditionnel expo-mlkit-ocr
+let ExpoMlkitOcr: any = null;
 try {
-  MlkitOcr = require('@infinitered/react-native-mlkit-ocr').default;
+  ExpoMlkitOcr = require('expo-mlkit-ocr').default;
 } catch {}
 
 // Import conditionnel Haptics
@@ -60,17 +60,17 @@ function getStatusLabel(
 /**
  * MrzScannerNative
  *
- * Scan MRZ 100% LOCAL :
- *   expo-camera → capture frame → expo-image-manipulator (crop) →
- *   MLKit OCR (@infinitered/react-native-mlkit-ocr) →
- *   mrz-mapper (extract lignes MRZ) → mrz-fast (parse + validate) →
- *   onSuccess(MrzResult)
+ * Scan MRZ 100% LOCAL — aucun appel réseau, fonctionne hors ligne.
  *
- * Aucun appel réseau — fonctionne hors ligne.
- * Pas de babel.config.js requis.
+ * Flow :
+ *   expo-camera → takePictureAsync()
+ *     → manipulateAsync() crop 38% bas (zone MRZ)
+ *     → ExpoMlkitOcr.recognizeText() OCR local
+ *     → mrz-mapper extrait + parse les lignes MRZ
+ *     → onSuccess(MrzResult)
  *
- * Peer deps :
- *   npx expo install expo-camera expo-image-manipulator @infinitered/react-native-mlkit-ocr
+ * Peer deps dans le projet consommateur :
+ *   npx expo install expo-camera expo-image-manipulator expo-mlkit-ocr
  *   npx expo run:ios
  */
 export function MrzScannerNative({
@@ -172,8 +172,9 @@ export function MrzScannerNative({
       if (!isMountedRef.current) return;
       if (isMountedRef.current) setScanState('analyzing');
 
-      // 3. OCR local via MLKit
-      const ocrResult = await MlkitOcr.detectFromUri(cropped.uri);
+      // 3. OCR local via expo-mlkit-ocr
+      // recognizeText retourne { text: string, blocks: [...] }
+      const ocrResult = await ExpoMlkitOcr.recognizeText(cropped.uri);
 
       // 4. Extraire le texte brut de tous les blocs
       const fullText = ocrResult
@@ -231,6 +232,23 @@ export function MrzScannerNative({
     colorAnim.setValue(0);
     pulseAnim.setValue(1);
     setScanState('idle');
+  }
+
+  if (!ExpoMlkitOcr) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>⚠️ Peer dep manquant</Text>
+        <Text style={styles.errorText}>
+          Installe expo-mlkit-ocr dans ton projet :
+        </Text>
+        <Text style={styles.errorCode}>npx expo install expo-mlkit-ocr</Text>
+        {onClose && (
+          <Pressable style={styles.permBtn} onPress={onClose}>
+            <Text style={styles.permBtnText}>Fermer</Text>
+          </Pressable>
+        )}
+      </View>
+    );
   }
 
   // ── Permissions ─────────────────────────────────────────────────────────────
@@ -386,7 +404,34 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#080810',
+    padding: 32,
+  },
+  errorTitle: {
+    color: '#ff4d6d',
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#f0ede6',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  errorCode: {
+    backgroundColor: '#13131f',
+    color: '#c8ff00',
+    fontSize: 12,
+    padding: 12,
+    borderRadius: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    marginBottom: 24,
+  },
   retryRow: {
     position: 'absolute',
     bottom: 50,
