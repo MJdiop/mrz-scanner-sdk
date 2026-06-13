@@ -1,62 +1,106 @@
 import type { DocumentType, MrzFields, MrzResult } from './types'
 
+// Import conditionnel mrz-fast
+let parseMRZ: ((lines: [string, string], opts?: any) => any) | null = null
+let parseMrzGeneric: ((lines: string[], opts?: any) => any) | null = null
+
+try {
+  parseMRZ = require('mrz-fast').parseMRZ
+} catch {}
+
+try {
+  parseMrzGeneric = require('mrz').parse
+} catch {}
+
+const DOCUMENT_LABELS: Record<DocumentType, string> = {
+  TD3: 'Passeport',
+  TD1: "Carte d'identité nationale",
+  TD2: 'Visa / titre de voyage',
+  DL:  'Permis de conduire',
+}
+
 /**
- * Mappe les résultats bruts de vision-camera-mrz-scanner
- * vers notre MrzResult unifié.
- *
- * vision-camera-mrz-scanner retourne un objet MRZProperties :
- * {
- *   documentType, surname, givenNames, nationality,
- *   birthDate, expirationDate, documentNumber,
- *   sex, personalNumber, issuingState, ...
- * }
+ * Reçoit le texte brut OCR de MLKit,
+ * extrait les lignes MRZ candidates et les parse.
+ * Retourne null si aucune MRZ valide trouvée.
  */
-export function mapVisionCameraResult(raw: Record<string, string>): MrzResult {
-  const docType = detectDocumentType(raw.documentType ?? '')
+export function mapMlkitResult(ocrText: string): MrzResult | null {
+  // Nettoyer et extraire les lignes candidates
+  const lines = ocrText
+    .split('\n')
+    .map((l) => l.trim().replace(/\s+/g, '').replace(/[^A-Z0-9<]/g, ''))
+    .filter((l) => l.length >= 28 && /^[A-Z0-9<]+$/.test(l))
 
-  const fields: MrzFields = {
-    surname:        raw.surname        ?? raw.lastName  ?? null,
-    givenNames:     raw.givenNames     ?? raw.firstName ?? null,
-    nationality:    raw.nationality    ?? null,
-    issuingState:   raw.issuingState   ?? null,
-    dateOfBirth:    raw.birthDate      ?? raw.dateOfBirth ?? null,
-    sex:            normalizeSex(raw.sex),
-    expirationDate: raw.expirationDate ?? raw.dateOfExpiry ?? null,
-    documentNumber: raw.documentNumber ?? null,
-    personalNumber: raw.personalNumber ?? null,
+  if (lines.length < 2) return null
+
+  // Détecter le type
+  const type = detectType(lines)
+  if (!type) return null
+
+  return parseLines(lines, type)
+}
+
+function detectType(lines: string[]): DocumentType | null {
+  if (lines.length >= 2 && lines[0].length === 44) return 'TD3'
+  if (lines.length >= 3 && lines[0].length === 30) return 'TD1'
+  if (lines.length >= 2 && lines[0].length === 36) return 'TD2'
+  return null
+}
+
+function parseLines(lines: string[], type: DocumentType): MrzResult | null {
+  try {
+    // TD3 → mrz-fast avec correction OCR
+    if (type === 'TD3' && parseMRZ) {
+      const result = parseMRZ([lines[0], lines[1]], { errorCorrection: true })
+      if (!result.valid) return null
+      return {
+        documentType:  'TD3',
+        documentLabel: DOCUMENT_LABELS['TD3'],
+        corrected:     result.corrected,
+        fields:        normalizeFields(result.fields),
+      }
+    }
+
+    // TD1 / TD2 → mrz (Zakodium)
+    if (parseMrzGeneric) {
+      const mrzLines = type === 'TD1' ? lines.slice(0, 3) : lines.slice(0, 2)
+      const result = parseMrzGeneric(mrzLines, { autocorrect: true })
+      if (!result.valid) return null
+      return {
+        documentType:  type,
+        documentLabel: DOCUMENT_LABELS[type],
+        corrected:     false,
+        fields:        normalizeFields(result.fields),
+      }
+    }
+
+    return null
+  } catch {
+    return null
   }
+}
 
+function normalizeFields(f: Record<string, string | null>): MrzFields {
   return {
-    documentType:  docType,
-    documentLabel: getDocumentLabel(docType),
-    corrected:     false, // OCR local, pas de correction mrz-fast
-    fields,
+    surname:        f['lastName']       ?? null,
+    givenNames:     f['firstName']      ?? null,
+    nationality:    f['nationality']    ?? null,
+    issuingState:   f['issuingState']   ?? null,
+    dateOfBirth:    f['birthDate']      ?? null,
+    sex:            normalizeSex(f['sex']),
+    expirationDate: f['expirationDate'] ?? null,
+    documentNumber: f['documentNumber'] ?? null,
+    personalNumber: f['personalNumber'] ?? null,
   }
 }
 
-function detectDocumentType(raw: string): DocumentType {
-  const t = raw.toUpperCase()
-  if (t.startsWith('P'))  return 'TD3'
-  if (t.startsWith('I') || t.startsWith('A')) return 'TD1'
-  if (t.startsWith('V'))  return 'TD2'
-  if (t.startsWith('D'))  return 'DL'
-  return 'TD3' // fallback passeport
-}
-
-function getDocumentLabel(type: DocumentType): string {
-  const labels: Record<DocumentType, string> = {
-    TD3: 'Passeport',
-    TD1: "Carte d'identité nationale",
-    TD2: 'Visa / titre de voyage',
-    DL:  'Permis de conduire',
-  }
-  return labels[type]
-}
-
-function normalizeSex(raw?: string): MrzFields['sex'] {
+function normalizeSex(raw: string | null | undefined): MrzFields['sex'] {
   if (!raw) return null
   const s = raw.toUpperCase()
   if (s === 'M' || s === 'MALE')   return 'male'
   if (s === 'F' || s === 'FEMALE') return 'female'
   return 'unspecified'
 }
+
+// Ré-export pour usage direct (web)
+export { normalizeFields }

@@ -1,6 +1,6 @@
 import type { ApiConfig, MrzResult, ScanState } from './types';
 interface UseScannerOptions {
-    api: ApiConfig;
+    api?: ApiConfig;
     maxAttempts?: number;
     scanIntervalMs?: number;
     onSuccess: (result: MrzResult) => void;
