@@ -177,14 +177,38 @@ export function MrzScannerNative({
       // 3. OCR local via expo-mlkit-ocr
       // recognizeText retourne { text: string, blocks: [...] }
       const ocrResult = await ExpoMlkitOcr.recognizeText(cropped.uri);
+      // ── DEBUG — à retirer en production ─────────────────────────────────
+      console.log('[MRZ] Photo size:', photo.width, 'x', photo.height);
+      console.log('[MRZ] OCR raw result:', JSON.stringify(ocrResult));
 
-      // 4. Extraire le texte brut de tous les blocs
-      const fullText = ocrResult
-        .map((block: any) => block.text ?? block.value ?? '')
-        .join('\n');
+      // // 4. Extraire le texte brut de tous les blocs
+      // const fullText = ocrResult
+      //   .map((block: any) => block.text ?? block.value ?? '')
+      //   .join('\n');
+      // ✅ Correct — extraire text + blocks séparément
+      let fullText = '';
+      let blocks: any[] | undefined;
+
+      if (typeof ocrResult === 'string') {
+        fullText = ocrResult;
+      } else if (ocrResult?.text !== undefined) {
+        fullText = ocrResult.text; // texte global
+        blocks = ocrResult.blocks; // blocs individuels ← crucial pour Android
+      } else if (Array.isArray(ocrResult)) {
+        fullText = ocrResult.map((b: any) => b.text ?? '').join('\n');
+        blocks = ocrResult;
+      }
+      console.log('[MRZ] fullText:', fullText);
 
       // 5. Parser la MRZ depuis le texte OCR
-      const result: MrzResult | null = mapMlkitResult(fullText);
+      // const result: MrzResult | null = mapMlkitResult(fullText);
+      // ✅ Correct
+      const result: MrzResult | null = mapMlkitResult(fullText, blocks);
+
+      console.log(
+        '[MRZ] Parse result:',
+        result ? JSON.stringify(result) : 'null',
+      );
 
       if (!result || !isMountedRef.current) {
         // MRZ non détectée → retry
