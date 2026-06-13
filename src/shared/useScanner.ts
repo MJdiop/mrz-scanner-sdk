@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import type { ApiConfig, MrzResult, ScanState } from './types'
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ApiConfig, MrzResult, ScanState } from './types';
 
-const DEFAULT_INTERVAL = 1500
-const DEFAULT_MAX_ATTEMPTS = 10
+const DEFAULT_INTERVAL = 1500;
+const DEFAULT_MAX_ATTEMPTS = 10;
 
 interface UseScannerOptions {
-  api: ApiConfig
-  maxAttempts?: number
-  scanIntervalMs?: number
-  onSuccess: (result: MrzResult) => void
-  onError?: (error: Error) => void
+  api?: ApiConfig;
+  maxAttempts?: number;
+  scanIntervalMs?: number;
+  onSuccess: (result: MrzResult) => void;
+  onError?: (error: Error) => void;
   /**
    * Fonction fournie par le composant (native ou web) qui :
    * 1. Capture une frame depuis la caméra
@@ -17,20 +17,20 @@ interface UseScannerOptions {
    * 3. Retourne une URI (native) ou un Blob (web) prêt à envoyer
    * Retourne null si la capture échoue (caméra pas prête, etc.)
    */
-  captureFrame: () => Promise<{ uri: string } | Blob | null>
+  captureFrame: () => Promise<{ uri: string } | Blob | null>;
   /**
    * Fonction d'envoi adaptée à la plateforme
    * (sendUriToApi pour native, sendImageToApi pour web)
    */
-  sendToApi: (api: ApiConfig, payload: string | Blob) => Promise<MrzResult>
+  sendToApi: (api: ApiConfig, payload: string | Blob) => Promise<MrzResult>;
 }
 
 export interface ScannerControls {
-  scanState: ScanState
-  attempts: number
-  start: () => void
-  stop: () => void
-  reset: () => void
+  scanState: ScanState;
+  attempts: number;
+  start: () => void;
+  stop: () => void;
+  reset: () => void;
 }
 
 /**
@@ -50,92 +50,92 @@ export function useScanner({
   captureFrame,
   sendToApi,
 }: UseScannerOptions): ScannerControls {
-  const [scanState, setScanState] = useState<ScanState>('idle')
-  const [attempts, setAttempts] = useState(0)
+  const [scanState, setScanState] = useState<ScanState>('idle');
+  const [attempts, setAttempts] = useState(0);
 
   // Refs pour éviter les closures obsolètes dans setInterval
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const isAnalyzingRef = useRef(false) // verrou — évite les appels concurrents
-  const isMountedRef = useRef(true)
-  const attemptsRef = useRef(0)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isAnalyzingRef = useRef(false); // verrou — évite les appels concurrents
+  const isMountedRef = useRef(true);
+  const attemptsRef = useRef(0);
 
   useEffect(() => {
-    isMountedRef.current = true
+    isMountedRef.current = true;
     return () => {
-      isMountedRef.current = false
-      stopInterval()
-    }
-  }, [])
+      isMountedRef.current = false;
+      stopInterval();
+    };
+  }, []);
 
   function stopInterval() {
     if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
   }
 
   const analyze = useCallback(async () => {
     // Verrou : on ne lance pas un nouvel appel si le précédent tourne encore
-    if (isAnalyzingRef.current || !isMountedRef.current) return
-    isAnalyzingRef.current = true
+    if (isAnalyzingRef.current || !isMountedRef.current) return;
+    isAnalyzingRef.current = true;
 
     try {
-      const frame = await captureFrame()
-      if (!frame || !isMountedRef.current) return
+      const frame = await captureFrame();
+      if (!frame || !isMountedRef.current) return;
 
-      if (isMountedRef.current) setScanState('analyzing')
+      if (isMountedRef.current) setScanState('analyzing');
 
       // frame est soit { uri: string } (native) soit un Blob (web)
-      const payload = 'uri' in frame ? frame.uri : frame
-      const result = await sendToApi(api, payload)
+      const payload = 'uri' in frame ? frame.uri : frame;
+      const result = await sendToApi(api!, payload);
 
-      if (!isMountedRef.current) return
+      if (!isMountedRef.current) return;
 
       // ✅ Succès
-      stopInterval()
-      setScanState('success')
-      onSuccess(result)
+      stopInterval();
+      setScanState('success');
+      onSuccess(result);
     } catch {
-      if (!isMountedRef.current) return
+      if (!isMountedRef.current) return;
 
       // Retry ou abandon
-      attemptsRef.current += 1
-      setAttempts(attemptsRef.current)
+      attemptsRef.current += 1;
+      setAttempts(attemptsRef.current);
 
       if (attemptsRef.current >= maxAttempts) {
-        stopInterval()
-        setScanState('failed')
-        onError?.(new Error(`Scan échoué après ${maxAttempts} tentatives.`))
+        stopInterval();
+        setScanState('failed');
+        onError?.(new Error(`Scan échoué après ${maxAttempts} tentatives.`));
       } else {
-        setScanState('scanning')
+        setScanState('scanning');
       }
     } finally {
-      isAnalyzingRef.current = false
+      isAnalyzingRef.current = false;
     }
-  }, [api, captureFrame, sendToApi, onSuccess, onError, maxAttempts])
+  }, [api, captureFrame, sendToApi, onSuccess, onError, maxAttempts]);
 
   function start() {
-    if (intervalRef.current) return
-    attemptsRef.current = 0
-    setAttempts(0)
-    setScanState('scanning')
+    if (intervalRef.current) return;
+    attemptsRef.current = 0;
+    setAttempts(0);
+    setScanState('scanning');
     // Première tentative immédiate puis intervalle
-    analyze()
-    intervalRef.current = setInterval(analyze, scanIntervalMs)
+    analyze();
+    intervalRef.current = setInterval(analyze, scanIntervalMs);
   }
 
   function stop() {
-    stopInterval()
-    setScanState('idle')
+    stopInterval();
+    setScanState('idle');
   }
 
   function reset() {
-    stopInterval()
-    isAnalyzingRef.current = false
-    attemptsRef.current = 0
-    setAttempts(0)
-    setScanState('idle')
+    stopInterval();
+    isAnalyzingRef.current = false;
+    attemptsRef.current = 0;
+    setAttempts(0);
+    setScanState('idle');
   }
 
-  return { scanState, attempts, start, stop, reset }
+  return { scanState, attempts, start, stop, reset };
 }

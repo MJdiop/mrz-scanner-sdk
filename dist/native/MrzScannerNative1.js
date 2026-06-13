@@ -111,7 +111,7 @@ export function MrzScannerNative({ api, onSuccess, onError, onClose, maxAttempts
         setTimeout(() => onSuccess(result), 500);
     }, [onSuccess]);
     const { scanState, attempts, start, reset } = useScanner({
-        api,
+        api: api,
         maxAttempts,
         scanIntervalMs,
         onSuccess: handleSuccess,
