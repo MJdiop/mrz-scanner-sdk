@@ -5,21 +5,31 @@ import React, {
   useState,
   type CSSProperties,
   type ReactElement,
-} from 'react'
+} from 'react';
 
-import { useScanner } from '../shared/useScanner'
-import { sendImageToApi } from '../shared/api-client'
-import type { ApiConfig, MrzResult, MrzScannerWebProps, ScanState } from '../shared/types'
+import { useScanner } from '../shared/useScanner';
+import { sendImageToApi } from '../shared/api-client';
+import type {
+  ApiConfig,
+  MrzResult,
+  MrzScannerWebProps,
+  ScanState,
+} from '../shared/types';
 
 // ─── Label d'état ─────────────────────────────────────────────────────────────
 
 function getLabel(state: ScanState, attempts: number, max: number): string {
   switch (state) {
-    case 'idle':      return 'Initialisation caméra…'
-    case 'scanning':  return 'Placez le document dans le cadre — zone MRZ en bas'
-    case 'analyzing': return 'Analyse en cours…'
-    case 'success':   return '✓ Document reconnu !'
-    case 'failed':    return `Échec après ${attempts}/${max} tentatives`
+    case 'idle':
+      return 'Initialisation caméra…';
+    case 'scanning':
+      return 'Placez le document dans le cadre — zone MRZ en bas';
+    case 'analyzing':
+      return 'Analyse en cours…';
+    case 'success':
+      return '✓ Document reconnu !';
+    case 'failed':
+      return `Échec après ${attempts}/${max} tentatives`;
   }
 }
 
@@ -30,7 +40,7 @@ function getLabel(state: ScanState, attempts: number, max: number): string {
  *
  * Composant React web de scan MRZ automatique via getUserMedia.
  * Compatible Next.js (App Router) avec 'use client', Vite, CRA, etc.
- * 
+ *
  * Next.js : importer avec dynamic() + { ssr: false }
  * ```ts
  * const MrzScannerWeb = dynamic(
@@ -60,49 +70,54 @@ export function MrzScannerWeb({
   height = '480px',
   className,
 }: MrzScannerWebProps): ReactElement {
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-  const [camReady, setCamReady] = useState(false)
-  const [camError, setCamError] = useState<string | null>(null)
+  const [camReady, setCamReady] = useState(false);
+  const [camError, setCamError] = useState<string | null>(null);
 
   // Démarrage de la caméra
   useEffect(() => {
-    let active = true
+    let active = true;
 
     async function initCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: 'environment' }, // caméra arrière si dispo
-            width:  { ideal: 1920 },
+            width: { ideal: 1920 },
             height: { ideal: 1080 },
           },
-        })
-        if (!active) { stream.getTracks().forEach(t => t.stop()); return }
-        streamRef.current = stream
+        });
+        if (!active) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = stream;
         if (videoRef.current) {
-          videoRef.current.srcObject = stream
+          videoRef.current.srcObject = stream;
           videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play()
-            if (active) setCamReady(true)
-          }
+            videoRef.current?.play();
+            if (active) setCamReady(true);
+          };
         }
       } catch (err) {
         if (active) {
-          setCamError("Impossible d'accéder à la caméra. Vérifiez les permissions.")
-          console.error('[MrzScannerWeb] Camera error:', err)
+          setCamError(
+            "Impossible d'accéder à la caméra. Vérifiez les permissions.",
+          );
+          console.error('[MrzScannerWeb] Camera error:', err);
         }
       }
     }
 
-    initCamera()
+    initCamera();
     return () => {
-      active = false
-      streamRef.current?.getTracks().forEach(t => t.stop())
-    }
-  }, [])
+      active = false;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
 
   /**
    * Capture une frame depuis le flux vidéo.
@@ -110,34 +125,37 @@ export function MrzScannerWeb({
    * Retourne un Blob JPEG prêt à envoyer à l'API.
    */
   const captureFrame = useCallback(async (): Promise<Blob | null> => {
-    const video  = videoRef.current
-    const canvas = canvasRef.current
-    if (!video || !canvas || !camReady) return null
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas || !camReady) return null;
 
-    const vw = video.videoWidth
-    const vh = video.videoHeight
-    if (!vw || !vh) return null
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!vw || !vh) return null;
 
-    // Recadrage sur les 38% bas
-    const cropY = Math.floor(vh * 0.62)
-    const cropH = Math.floor(vh * 0.38)
+    // Recadrage sur les 50% bas
+    const cropY = Math.floor(vh * 0.5);
+    const cropH = Math.floor(vh * 0.5);
 
-    canvas.width  = vw
-    canvas.height = cropH
+    canvas.width = vw;
+    canvas.height = cropH;
 
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
 
-    ctx.drawImage(video, 0, cropY, vw, cropH, 0, 0, vw, cropH)
+    ctx.drawImage(video, 0, cropY, vw, cropH, 0, 0, vw, cropH);
 
     return new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(resolve, 'image/jpeg', 0.85)
-    })
-  }, [camReady])
+      canvas.toBlob(resolve, 'image/jpeg', 0.85);
+    });
+  }, [camReady]);
 
-  const handleSuccess = useCallback((result: MrzResult) => {
-    onSuccess(result)
-  }, [onSuccess])
+  const handleSuccess = useCallback(
+    (result: MrzResult) => {
+      onSuccess(result);
+    },
+    [onSuccess],
+  );
 
   const { scanState, attempts, start, reset } = useScanner({
     api,
@@ -146,17 +164,17 @@ export function MrzScannerWeb({
     onSuccess: handleSuccess,
     onError,
     captureFrame: async () => {
-      const blob = await captureFrame()
-      return blob  // useScanner accepte Blob directement
+      const blob = await captureFrame();
+      return blob; // useScanner accepte Blob directement
     },
     sendToApi: async (cfg: ApiConfig, payload: string | Blob) =>
       sendImageToApi(cfg, payload as Blob),
-  })
+  });
 
   // Démarrer dès que la caméra est prête
   useEffect(() => {
-    if (camReady) start()
-  }, [camReady])
+    if (camReady) start();
+  }, [camReady]);
 
   // ─── Erreur caméra ──────────────────────────────────────────────────────────
   if (camError) {
@@ -165,26 +183,23 @@ export function MrzScannerWeb({
         <div style={errorStyle}>
           <p style={{ color: '#fff', marginBottom: 16 }}>{camError}</p>
           {onClose && (
-            <button style={btnStyle} onClick={onClose}>Fermer</button>
+            <button style={btnStyle} onClick={onClose}>
+              Fermer
+            </button>
           )}
         </div>
       </div>
-    )
+    );
   }
 
   // ─── Frame principal ────────────────────────────────────────────────────────
-  const isSuccess = scanState === 'success'
-  const isFailed  = scanState === 'failed'
+  const isSuccess = scanState === 'success';
+  const isFailed = scanState === 'failed';
 
   return (
     <div style={{ ...containerStyle, width, height }} className={className}>
       {/* Flux vidéo */}
-      <video
-        ref={videoRef}
-        muted
-        playsInline
-        style={videoStyle}
-      />
+      <video ref={videoRef} muted playsInline style={videoStyle} />
 
       {/* Canvas caché pour la capture */}
       <canvas ref={canvasRef} style={{ display: 'none' }} />
@@ -209,20 +224,55 @@ export function MrzScannerWeb({
                   ? '0 0 0 1px rgba(255,255,255,0.2)'
                   : 'none',
               transition: 'border-color 0.3s, box-shadow 0.3s',
-              animation: scanState === 'scanning' ? 'pulse 1.4s ease-in-out infinite' : 'none',
+              animation:
+                scanState === 'scanning'
+                  ? 'pulse 1.4s ease-in-out infinite'
+                  : 'none',
             }}
           >
             {/* Coins */}
-            <div style={{ ...cornerStyle, top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 }} />
-            <div style={{ ...cornerStyle, top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 }} />
-            <div style={{ ...cornerStyle, bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 }} />
-            <div style={{ ...cornerStyle, bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 }} />
+            <div
+              style={{
+                ...cornerStyle,
+                top: 0,
+                left: 0,
+                borderRightWidth: 0,
+                borderBottomWidth: 0,
+              }}
+            />
+            <div
+              style={{
+                ...cornerStyle,
+                top: 0,
+                right: 0,
+                borderLeftWidth: 0,
+                borderBottomWidth: 0,
+              }}
+            />
+            <div
+              style={{
+                ...cornerStyle,
+                bottom: 0,
+                left: 0,
+                borderRightWidth: 0,
+                borderTopWidth: 0,
+              }}
+            />
+            <div
+              style={{
+                ...cornerStyle,
+                bottom: 0,
+                right: 0,
+                borderLeftWidth: 0,
+                borderTopWidth: 0,
+              }}
+            />
 
-            {scanState === 'analyzing' && (
-              <div style={spinnerStyle} />
-            )}
+            {scanState === 'analyzing' && <div style={spinnerStyle} />}
             {isSuccess && (
-              <span style={{ color: '#34d399', fontSize: 28, fontWeight: 700 }}>✓</span>
+              <span style={{ color: '#34d399', fontSize: 28, fontWeight: 700 }}>
+                ✓
+              </span>
             )}
           </div>
 
@@ -242,7 +292,10 @@ export function MrzScannerWeb({
         {isFailed && (
           <button
             style={{ ...btnStyle, marginTop: 12 }}
-            onClick={() => { reset(); setTimeout(start, 100) }}
+            onClick={() => {
+              reset();
+              setTimeout(start, 100);
+            }}
           >
             Réessayer
           </button>
@@ -251,7 +304,11 @@ export function MrzScannerWeb({
 
       {/* Bouton fermer */}
       {onClose && (
-        <button style={closeBtnStyle} onClick={onClose} aria-label="Fermer le scanner">
+        <button
+          style={closeBtnStyle}
+          onClick={onClose}
+          aria-label="Fermer le scanner"
+        >
           ✕
         </button>
       )}
@@ -267,7 +324,7 @@ export function MrzScannerWeb({
         }
       `}</style>
     </div>
-  )
+  );
 }
 
 // ─── Styles inline ────────────────────────────────────────────────────────────
@@ -277,7 +334,7 @@ const containerStyle: CSSProperties = {
   overflow: 'hidden',
   background: '#000',
   borderRadius: 12,
-}
+};
 
 const videoStyle: CSSProperties = {
   position: 'absolute',
@@ -285,7 +342,7 @@ const videoStyle: CSSProperties = {
   width: '100%',
   height: '100%',
   objectFit: 'cover',
-}
+};
 
 const overlayStyle: CSSProperties = {
   position: 'absolute',
@@ -293,11 +350,11 @@ const overlayStyle: CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   pointerEvents: 'none',
-}
+};
 
 const maskStyle: CSSProperties = {
   background: 'rgba(0,0,0,0.55)',
-}
+};
 
 const frameStyle: CSSProperties = {
   flex: 5,
@@ -307,7 +364,7 @@ const frameStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-}
+};
 
 const cornerStyle: CSSProperties = {
   position: 'absolute',
@@ -316,7 +373,7 @@ const cornerStyle: CSSProperties = {
   borderStyle: 'solid',
   borderColor: '#fff',
   borderWidth: 2,
-}
+};
 
 const spinnerStyle: CSSProperties = {
   position: 'absolute',
@@ -328,7 +385,7 @@ const spinnerStyle: CSSProperties = {
   borderTopColor: '#fff',
   borderRadius: '50%',
   animation: 'spin 0.8s linear infinite',
-}
+};
 
 const statusBarStyle: CSSProperties = {
   position: 'absolute',
@@ -340,14 +397,14 @@ const statusBarStyle: CSSProperties = {
   alignItems: 'center',
   padding: '0 24px',
   pointerEvents: 'none',
-}
+};
 
 const statusTextStyle: CSSProperties = {
   color: '#fff',
   fontSize: 13,
   textAlign: 'center',
   textShadow: '0 1px 4px rgba(0,0,0,0.8)',
-}
+};
 
 const closeBtnStyle: CSSProperties = {
   position: 'absolute',
@@ -364,7 +421,7 @@ const closeBtnStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-}
+};
 
 const btnStyle: CSSProperties = {
   background: '#c8ff00',
@@ -376,7 +433,7 @@ const btnStyle: CSSProperties = {
   fontSize: 14,
   cursor: 'pointer',
   pointerEvents: 'auto',
-}
+};
 
 const errorStyle: CSSProperties = {
   position: 'absolute',
@@ -386,4 +443,4 @@ const errorStyle: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   padding: 24,
-}
+};

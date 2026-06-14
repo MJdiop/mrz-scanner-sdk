@@ -226,7 +226,7 @@ export function MrzScannerNative({
       Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
       setTimeout(() => {
         if (isMountedRef.current) onSuccess(result);
-      }, 800);
+      }, 1000);
     } catch (err) {
       if (isMountedRef.current) setScanState('scanning');
     } finally {
@@ -351,7 +351,7 @@ export function MrzScannerNative({
             style={styles.retryBtn}
             onPress={() => {
               reset();
-              setTimeout(startScan, 800);
+              setTimeout(startScan, 1000);
             }}
           >
             <Text style={styles.retryText}>Réessayer</Text>
