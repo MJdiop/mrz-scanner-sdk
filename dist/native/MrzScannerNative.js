@@ -204,6 +204,7 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
         colorAnim.setValue(0);
         pulseAnim.setValue(1);
         setScanState('idle');
+        setIsErrorScan(null);
     }
     if (!ExpoMlkitOcr) {
         return (_jsxs(View, { style: styles.errorContainer, children: [_jsx(Text, { style: styles.errorTitle, children: "\u26A0\uFE0F Peer dep manquant" }), _jsx(Text, { style: styles.errorText, children: "Installe expo-mlkit-ocr dans ton projet :" }), _jsx(Text, { style: styles.errorCode, children: "npx expo install expo-mlkit-ocr" }), onClose && (_jsx(Pressable, { style: styles.permBtn, onPress: onClose, children: _jsx(Text, { style: styles.permBtnText, children: "Fermer" }) }))] }));
@@ -214,7 +215,7 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
     if (!permission.granted) {
         return (_jsxs(View, { style: styles.permContainer, children: [_jsx(Text, { style: styles.permText, children: "Acc\u00E8s \u00E0 la cam\u00E9ra requis pour scanner le document." }), _jsx(Pressable, { style: styles.permBtn, onPress: requestPermission, children: _jsx(Text, { style: styles.permBtnText, children: "Autoriser la cam\u00E9ra" }) })] }));
     }
-    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan, enableTorch: enableTorch }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [styles.frame], children: [_jsxs(View, { style: styles.mrzPreview, children: [_jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' }), _jsx(Text, { style: styles.mrzText, children: '0000000000SEN000000M00000000000000000' }), _jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' })] }), scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: isErrorScan
+    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan, enableTorch: enableTorch }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [styles.frame], children: [_jsxs(View, { style: styles.mrzPreview, children: [_jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' }), _jsx(Text, { style: styles.mrzText, children: '0000000000SEN000000M00000000000000000' }), _jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' })] }), scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.rapel, children: _jsx(Text, { style: styles.rapelText, children: "Veillez scanner le dos de la pi\u00E8ce pour les carte d'identit\u00E9 svp" }) }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: isErrorScan
                         ? isErrorScan
                         : getStatusLabel(scanState, attempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, pointerEvents: "box-none", children: _jsx(Pressable, { style: [
                         styles.retryBtn,
@@ -258,6 +259,23 @@ const styles = StyleSheet.create({
     },
     spinner: { position: 'absolute', top: 8, right: 8 },
     successIcon: { fontSize: 28, fontWeight: '700' },
+    rapel: {
+        position: 'absolute',
+        top: 150,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        paddingHorizontal: 10,
+    },
+    rapelText: {
+        color: '#bdbabac7',
+        fontSize: 10,
+        letterSpacing: 1,
+        textAlign: 'center',
+        textShadowColor: 'rgba(0,0,0,0.8)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 4,
+    },
     statusBar: {
         position: 'absolute',
         bottom: 100,
@@ -337,7 +355,7 @@ const styles = StyleSheet.create({
         gap: 2,
     },
     mrzText: {
-        color: 'rgba(255, 255, 255, 0.5)',
+        color: 'rgba(0, 0, 0, 0.4)',
         fontSize: 12,
         fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
         letterSpacing: 1,
