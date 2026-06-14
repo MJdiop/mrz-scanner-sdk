@@ -1,6 +1,6 @@
 # @scanid-africa/mrz-scanner
 
-Scanner MRZ automatique pour React Native (Expo) et React web. Détecte et parse les zones MRZ de passeports, cartes d'identité, visas et permis de conduire.
+Scanner MRZ automatique pour React Native (Expo) et React web. Détecte et parse les zones MRZ de passeports, cartes d'identité.
 
 | Plateforme   | Mode          | Réseau requis |
 | ------------ | ------------- | ------------- |
