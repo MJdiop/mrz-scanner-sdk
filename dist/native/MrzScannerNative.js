@@ -176,7 +176,7 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
             setTimeout(() => {
                 if (isMountedRef.current)
                     onSuccess(result);
-            }, 800);
+            }, 1000);
         }
         catch (err) {
             if (isMountedRef.current)
@@ -215,7 +215,7 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
     }
     return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan, enableTorch: enableTorch }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [styles.frame], children: [_jsxs(View, { style: styles.mrzPreview, children: [_jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' }), _jsx(Text, { style: styles.mrzText, children: '0000000000SEN000000M00000000000000000' }), _jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' })] }), scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: getStatusLabel(scanState, attempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, pointerEvents: "box-none", children: _jsx(Pressable, { style: styles.retryBtn, onPress: () => {
                         reset();
-                        setTimeout(startScan, 800);
+                        setTimeout(startScan, 1000);
                     }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsxs(_Fragment, { children: [_jsx(Pressable, { style: [styles.closeBtn, { left: 20, top: 55 }], onPress: () => setEnableTorch(!enableTorch), hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: enableTorch ? (_jsx(MaterialIcons, { name: "flashlight-off", size: 22, color: "white" })) : (_jsx(MaterialIcons, { name: "flashlight-on", size: 22, color: "white" })) }) }), _jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) })] }))] }));
 }
 const styles = StyleSheet.create({

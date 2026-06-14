@@ -5,11 +5,16 @@ import { sendImageToApi } from '../shared/api-client';
 // ─── Label d'état ─────────────────────────────────────────────────────────────
 function getLabel(state, attempts, max) {
     switch (state) {
-        case 'idle': return 'Initialisation caméra…';
-        case 'scanning': return 'Placez le document dans le cadre — zone MRZ en bas';
-        case 'analyzing': return 'Analyse en cours…';
-        case 'success': return '✓ Document reconnu !';
-        case 'failed': return `Échec après ${attempts}/${max} tentatives`;
+        case 'idle':
+            return 'Initialisation caméra…';
+        case 'scanning':
+            return 'Placez le document dans le cadre — zone MRZ en bas';
+        case 'analyzing':
+            return 'Analyse en cours…';
+        case 'success':
+            return '✓ Document reconnu !';
+        case 'failed':
+            return `Échec après ${attempts}/${max} tentatives`;
     }
 }
 // ─── Composant ────────────────────────────────────────────────────────────────
@@ -56,7 +61,7 @@ export function MrzScannerWeb({ api, onSuccess, onError, onClose, maxAttempts = 
                     },
                 });
                 if (!active) {
-                    stream.getTracks().forEach(t => t.stop());
+                    stream.getTracks().forEach((t) => t.stop());
                     return;
                 }
                 streamRef.current = stream;
@@ -81,7 +86,7 @@ export function MrzScannerWeb({ api, onSuccess, onError, onClose, maxAttempts = 
         return () => {
             var _a;
             active = false;
-            (_a = streamRef.current) === null || _a === void 0 ? void 0 : _a.getTracks().forEach(t => t.stop());
+            (_a = streamRef.current) === null || _a === void 0 ? void 0 : _a.getTracks().forEach((t) => t.stop());
         };
     }, []);
     /**
@@ -98,9 +103,9 @@ export function MrzScannerWeb({ api, onSuccess, onError, onClose, maxAttempts = 
         const vh = video.videoHeight;
         if (!vw || !vh)
             return null;
-        // Recadrage sur les 38% bas
-        const cropY = Math.floor(vh * 0.62);
-        const cropH = Math.floor(vh * 0.38);
+        // Recadrage sur les 50% bas
+        const cropY = Math.floor(vh * 0.5);
+        const cropH = Math.floor(vh * 0.5);
         canvas.width = vw;
         canvas.height = cropH;
         const ctx = canvas.getContext('2d');
@@ -142,7 +147,12 @@ export function MrzScannerWeb({ api, onSuccess, onError, onClose, maxAttempts = 
                                         ? '0 0 0 2px #34d399, 0 0 20px rgba(52,211,153,0.3)'
                                         : camReady
                                             ? '0 0 0 1px rgba(255,255,255,0.2)'
-                                            : 'none', transition: 'border-color 0.3s, box-shadow 0.3s', animation: scanState === 'scanning' ? 'pulse 1.4s ease-in-out infinite' : 'none' }), children: [_jsx("div", { style: Object.assign(Object.assign({}, cornerStyle), { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 }) }), _jsx("div", { style: Object.assign(Object.assign({}, cornerStyle), { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 }) }), _jsx("div", { style: Object.assign(Object.assign({}, cornerStyle), { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 }) }), _jsx("div", { style: Object.assign(Object.assign({}, cornerStyle), { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 }) }), scanState === 'analyzing' && (_jsx("div", { style: spinnerStyle })), isSuccess && (_jsx("span", { style: { color: '#34d399', fontSize: 28, fontWeight: 700 }, children: "\u2713" }))] }), _jsx("div", { style: Object.assign(Object.assign({}, maskStyle), { flex: 1 }) })] }), _jsx("div", { style: Object.assign(Object.assign({}, maskStyle), { flex: 2 }) })] }), _jsxs("div", { style: statusBarStyle, children: [_jsx("span", { style: statusTextStyle, children: getLabel(scanState, attempts, maxAttempts) }), isFailed && (_jsx("button", { style: Object.assign(Object.assign({}, btnStyle), { marginTop: 12 }), onClick: () => { reset(); setTimeout(start, 100); }, children: "R\u00E9essayer" }))] }), onClose && (_jsx("button", { style: closeBtnStyle, onClick: onClose, "aria-label": "Fermer le scanner", children: "\u2715" })), _jsx("style", { children: `
+                                            : 'none', transition: 'border-color 0.3s, box-shadow 0.3s', animation: scanState === 'scanning'
+                                        ? 'pulse 1.4s ease-in-out infinite'
+                                        : 'none' }), children: [_jsx("div", { style: Object.assign(Object.assign({}, cornerStyle), { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 }) }), _jsx("div", { style: Object.assign(Object.assign({}, cornerStyle), { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 }) }), _jsx("div", { style: Object.assign(Object.assign({}, cornerStyle), { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 }) }), _jsx("div", { style: Object.assign(Object.assign({}, cornerStyle), { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 }) }), scanState === 'analyzing' && _jsx("div", { style: spinnerStyle }), isSuccess && (_jsx("span", { style: { color: '#34d399', fontSize: 28, fontWeight: 700 }, children: "\u2713" }))] }), _jsx("div", { style: Object.assign(Object.assign({}, maskStyle), { flex: 1 }) })] }), _jsx("div", { style: Object.assign(Object.assign({}, maskStyle), { flex: 2 }) })] }), _jsxs("div", { style: statusBarStyle, children: [_jsx("span", { style: statusTextStyle, children: getLabel(scanState, attempts, maxAttempts) }), isFailed && (_jsx("button", { style: Object.assign(Object.assign({}, btnStyle), { marginTop: 12 }), onClick: () => {
+                            reset();
+                            setTimeout(start, 100);
+                        }, children: "R\u00E9essayer" }))] }), onClose && (_jsx("button", { style: closeBtnStyle, onClick: onClose, "aria-label": "Fermer le scanner", children: "\u2715" })), _jsx("style", { children: `
         @keyframes pulse {
           0%, 100% { transform: scale(1);     opacity: 1;    }
           50%       { transform: scale(1.015); opacity: 0.85; }
