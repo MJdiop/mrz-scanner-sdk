@@ -12,8 +12,8 @@ try {
 } catch {}
 
 const DOCUMENT_LABELS: Record<DocumentType, string> = {
-  TD3: 'Passeport',
-  TD1: "Carte d'identité nationale",
+  TD3_PASSPORT: 'Passeport',
+  TD1_ID: "Carte d'identité",
   TD2: 'Visa / titre de voyage',
   DL: 'Permis de conduire',
 };
@@ -89,27 +89,27 @@ function extractCandidates(
 
 function detectType(lines: string[]): DocumentType | null {
   // Chercher parmi tous les candidats, pas juste les deux premiers
-  const td3lines = lines.filter((l) => l.length === 44);
-  const td1lines = lines.filter((l) => l.length === 30);
+  const TD3_PASSPORTlines = lines.filter((l) => l.length === 44);
+  const TD1_IDlines = lines.filter((l) => l.length === 30);
   const td2lines = lines.filter((l) => l.length === 36);
 
-  if (td3lines.length >= 2) return 'TD3';
-  if (td1lines.length >= 3) return 'TD1';
+  if (TD3_PASSPORTlines.length >= 2) return 'TD3_PASSPORT';
+  if (TD1_IDlines.length >= 3) return 'TD1_ID';
   if (td2lines.length >= 2) return 'TD2';
 
   // Fallback : longueur exacte pas trouvée, essayer avec tolérance ±2
   const near44 = lines.filter((l) => l.length >= 42 && l.length <= 46);
   const near30 = lines.filter((l) => l.length >= 28 && l.length <= 32);
 
-  if (near44.length >= 2) return 'TD3';
-  if (near30.length >= 3) return 'TD1';
+  if (near44.length >= 2) return 'TD3_PASSPORT';
+  if (near30.length >= 3) return 'TD1_ID';
 
   return null;
 }
 
 function parseLines(lines: string[], type: DocumentType): MrzResult | null {
   try {
-    if (type === 'TD3' && parseMRZ) {
+    if (type === 'TD3_PASSPORT' && parseMRZ) {
       // Prendre les deux lignes de 44 chars (ou proche)
       const mrzLines = lines
         .filter((l) => l.length >= 42 && l.length <= 46)
@@ -127,16 +127,16 @@ function parseLines(lines: string[], type: DocumentType): MrzResult | null {
       }
 
       return {
-        documentType: 'TD3',
-        documentLabel: DOCUMENT_LABELS['TD3'],
+        documentType: 'TD3_PASSPORT',
+        documentLabel: DOCUMENT_LABELS['TD3_PASSPORT'],
         corrected: result.corrected,
         fields: normalizeFields(result.fields),
       };
     }
 
     if (parseMrzGeneric) {
-      const count = type === 'TD1' ? 3 : 2;
-      const targetLen = type === 'TD1' ? 30 : 36;
+      const count = type === 'TD1_ID' ? 3 : 2;
+      const targetLen = type === 'TD1_ID' ? 30 : 36;
       const mrzLines = lines
         .filter((l) => l.length >= targetLen - 2 && l.length <= targetLen + 2)
         .slice(0, count)

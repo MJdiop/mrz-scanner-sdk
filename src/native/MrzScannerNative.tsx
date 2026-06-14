@@ -157,6 +157,7 @@ export function MrzScannerNative({
       const photo = await cameraRef.current.takePictureAsync({
         quality: 0.9,
         skipProcessing: true,
+        shutterSound: false,
       });
       if (!photo || !isMountedRef.current) return;
 

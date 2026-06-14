@@ -1,6 +1,6 @@
 // ─── Résultat MRZ ─────────────────────────────────────────────────────────────
 
-export type DocumentType = 'TD1' | 'TD2' | 'TD3' | 'DL';
+export type DocumentType = 'TD1_ID' | 'TD2' | 'TD3_PASSPORT' | 'DL';
 
 export interface MrzFields {
   surname: string | null;

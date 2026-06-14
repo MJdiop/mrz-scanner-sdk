@@ -52,7 +52,7 @@ export function DocumentScanScreen() {
     console.log(result.fields.surname); // "DIOP"
     console.log(result.fields.givenNames); // "MBAYE JACQUES"
     console.log(result.fields.documentNumber); // "XXXXXXXXX"
-    console.log(result.documentType); // "TD3"
+    console.log(result.documentType); // "TD3_PASSPORT"
   }
 
   return (
@@ -175,8 +175,8 @@ Compatible `expo-audio` (nouveau) et `expo-av` (ancien) — détection automatiq
 
 ```ts
 interface MrzResult {
-  documentType: 'TD1' | 'TD2' | 'TD3' | 'DL';
-  documentLabel: string; // "Passeport" | "Carte d'identité nationale" | …
+  documentType: 'TD1_ID' | 'TD2' | 'TD3_PASSPORT' | 'DL';
+  documentLabel: string; // "Passeport" | "Carte d'identité " | …
   corrected: boolean; // true si une correction OCR a été appliquée
   fields: {
     surname: string | null;
@@ -194,12 +194,12 @@ interface MrzResult {
 
 ### Documents supportés
 
-| Type | Document                   | Lignes       | Parser                    |
-| ---- | -------------------------- | ------------ | ------------------------- |
-| TD3  | Passeport                  | 2 × 44 chars | mrz-fast (correction OCR) |
-| TD1  | Carte d'identité nationale | 3 × 30 chars | mrz                       |
-| TD2  | Visa / titre de voyage     | 2 × 36 chars | mrz                       |
-| DL   | Permis de conduire         | variable     | heuristique               |
+| Type         | Document               | Lignes       | Parser                    |
+| ------------ | ---------------------- | ------------ | ------------------------- |
+| TD3_PASSPORT | Passeport              | 2 × 44 chars | mrz-fast (correction OCR) |
+| TD1_ID       | Carte d'identité       | 3 × 30 chars | mrz                       |
+| TD2          | Visa / titre de voyage | 2 × 36 chars | mrz                       |
+| DL           | Permis de conduire     | variable     | heuristique               |
 
 ---
 

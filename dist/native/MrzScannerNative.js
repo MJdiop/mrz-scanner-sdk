@@ -6,6 +6,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { mapMlkitResult } from '../shared/mrz-mapper';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSuccessSound } from '../shared/useSuccessSound';
 let ExpoMlkitOcr = null;
 // Après — fallback sur le module entier
 const mlkit = require('expo-mlkit-ocr');
@@ -17,7 +18,7 @@ try {
 }
 catch (_b) { }
 const SCAN_INTERVAL_MS = 1500;
-const MAX_ATTEMPTS = 12;
+const MAX_ATTEMPTS = 6;
 function getStatusLabel(state, attempts, hint) {
     switch (state) {
         case 'idle':
@@ -48,11 +49,11 @@ function getStatusLabel(state, attempts, hint) {
  *   npx expo install expo-camera expo-image-manipulator expo-mlkit-ocr
  *   npx expo run:ios
  */
-export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez la zone MRZ dans le cadre', frameColor = '#c8ff00', successColor = '#34d399', }) {
+export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez la zone MRZ dans le cadre', frameColor = '#c8ff00', successColor = '#34d399', successSound = true, }) {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanState, setScanState] = useState('idle');
     const [attempts, setAttempts] = useState(0);
-    const [enableTorch, setEnableTorch] = useState(false);
+    const { play: playSuccessSound } = useSuccessSound(successSound);
     const cameraRef = useRef(null);
     const intervalRef = useRef(null);
     const isAnalyzingRef = useRef(false);
@@ -62,6 +63,8 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
     const pulseAnim = useRef(new Animated.Value(1)).current;
     const colorAnim = useRef(new Animated.Value(0)).current;
     const pulseLoopRef = useRef(null);
+    const [enableTorch, setEnableTorch] = useState(false);
+    // const { playSound } = usePlaySound();
     useEffect(() => {
         isMountedRef.current = true;
         return () => {
@@ -114,14 +117,14 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
             });
             if (!photo || !isMountedRef.current)
                 return;
-            // 2. Crop sur les 38% bas (zone MRZ)
+            // TEST 2 : crop bas 50% (plus large que 38%)
             const cropped = await manipulateAsync(photo.uri, [
                 {
                     crop: {
                         originX: 0,
-                        originY: Math.floor(photo.height * 0.62),
+                        originY: Math.floor(photo.height * 0.5),
                         width: photo.width,
-                        height: Math.floor(photo.height * 0.38),
+                        height: Math.floor(photo.height * 0.5),
                     },
                 },
             ], { compress: 0.9, format: SaveFormat.JPEG });
@@ -130,16 +133,8 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
             if (isMountedRef.current)
                 setScanState('analyzing');
             // 3. OCR local via expo-mlkit-ocr
-            // recognizeText retourne { text: string, blocks: [...] }
             const ocrResult = await ExpoMlkitOcr.recognizeText(cropped.uri);
-            // ── DEBUG — à retirer en production ─────────────────────────────────
-            console.log('[MRZ] Photo size:', photo.width, 'x', photo.height);
-            console.log('[MRZ] OCR raw result:', JSON.stringify(ocrResult));
-            // // 4. Extraire le texte brut de tous les blocs
-            // const fullText = ocrResult
-            //   .map((block: any) => block.text ?? block.value ?? '')
-            //   .join('\n');
-            // ✅ Correct — extraire text + blocks séparément
+            // 4 Correct — extraire text + blocks séparément
             let fullText = '';
             let blocks;
             if (typeof ocrResult === 'string') {
@@ -153,12 +148,10 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
                 fullText = ocrResult.map((b) => { var _a; return (_a = b.text) !== null && _a !== void 0 ? _a : ''; }).join('\n');
                 blocks = ocrResult;
             }
-            console.log('[MRZ] fullText:', fullText);
             // 5. Parser la MRZ depuis le texte OCR
             // const result: MrzResult | null = mapMlkitResult(fullText);
             // ✅ Correct
             const result = mapMlkitResult(fullText, blocks);
-            console.log('[MRZ] Parse result:', result ? JSON.stringify(result) : 'null');
             if (!result || !isMountedRef.current) {
                 // MRZ non détectée → retry
                 attemptsRef.current += 1;
@@ -176,12 +169,13 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
             // 6. Succès
             stopScan();
             setScanState('success');
+            playSuccessSound();
             flashSuccess();
             (_a = Haptics === null || Haptics === void 0 ? void 0 : Haptics.notificationAsync) === null || _a === void 0 ? void 0 : _a.call(Haptics, (_b = Haptics === null || Haptics === void 0 ? void 0 : Haptics.NotificationFeedbackType) === null || _b === void 0 ? void 0 : _b.Success);
             setTimeout(() => {
                 if (isMountedRef.current)
                     onSuccess(result);
-            }, 500);
+            }, 800);
         }
         catch (err) {
             if (isMountedRef.current)
@@ -218,20 +212,10 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
     if (!permission.granted) {
         return (_jsxs(View, { style: styles.permContainer, children: [_jsx(Text, { style: styles.permText, children: "Acc\u00E8s \u00E0 la cam\u00E9ra requis pour scanner le document." }), _jsx(Pressable, { style: styles.permBtn, onPress: requestPermission, children: _jsx(Text, { style: styles.permBtnText, children: "Autoriser la cam\u00E9ra" }) })] }));
     }
-    const borderColor = colorAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [frameColor, successColor],
-    });
-    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan, enableTorch: enableTorch }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [
-                                    styles.frame,
-                                    {
-                                        borderColor,
-                                        transform: [{ scale: pulseAnim }],
-                                    },
-                                ], children: [scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: getStatusLabel(scanState, attempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, pointerEvents: "box-none", children: _jsx(Pressable, { style: styles.retryBtn, onPress: () => {
+    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan, enableTorch: enableTorch }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [styles.frame], children: [_jsxs(View, { style: styles.mrzPreview, children: [_jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' }), _jsx(Text, { style: styles.mrzText, children: '0000000000SEN000000M00000000000000000' }), _jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' })] }), scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: getStatusLabel(scanState, attempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, pointerEvents: "box-none", children: _jsx(Pressable, { style: styles.retryBtn, onPress: () => {
                         reset();
-                        setTimeout(startScan, 200);
-                    }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsxs(_Fragment, { children: [_jsx(Pressable, { style: [styles.closeBtn, { right: 100 }], onPress: () => setEnableTorch(!enableTorch), hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: enableTorch ? (_jsx(MaterialIcons, { name: "flashlight-off", size: 20, color: "white" })) : (_jsx(MaterialIcons, { name: "flashlight-on", size: 20, color: "white" })) }) }), _jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) })] }))] }));
+                        setTimeout(startScan, 800);
+                    }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsxs(_Fragment, { children: [_jsx(Pressable, { style: [styles.closeBtn, { left: 20, top: 55 }], onPress: () => setEnableTorch(!enableTorch), hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: enableTorch ? (_jsx(MaterialIcons, { name: "flashlight-off", size: 22, color: "white" })) : (_jsx(MaterialIcons, { name: "flashlight-on", size: 22, color: "white" })) }) }), _jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) })] }))] }));
 }
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#000' },
@@ -257,13 +241,11 @@ const styles = StyleSheet.create({
     permBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
     overlay: Object.assign({}, StyleSheet.absoluteFill),
     topMask: { flex: 3, backgroundColor: 'rgba(0,0,0,0.55)' },
-    middleRow: { flexDirection: 'row', height: 100 },
-    sideMask: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
+    middleRow: { flexDirection: 'row', height: 250 },
+    sideMask: { flex: 0.2, backgroundColor: 'rgba(0,0,0,0.55)' },
     bottomMask: { flex: 2, backgroundColor: 'rgba(0,0,0,0.55)' },
     frame: {
         flex: 5,
-        borderWidth: 2,
-        borderRadius: 6,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -329,9 +311,28 @@ const styles = StyleSheet.create({
     retryText: { color: '#000', fontWeight: '700', fontSize: 15 },
     closeBtn: {
         position: 'absolute',
-        top: Platform.OS === 'ios' ? 56 : 20,
+        top: 50,
         right: 20,
         padding: 10,
     },
     closeTxt: { color: '#fff', fontSize: 22 },
+    mrzPreview: {
+        position: 'absolute',
+        bottom: 8,
+        left: 6,
+        right: 6,
+        height: 70,
+        backgroundColor: 'rgba(0, 0, 0, 0.06)',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 3,
+        padding: 4,
+        gap: 2,
+    },
+    mrzText: {
+        color: 'rgba(255, 255, 255, 0.5)',
+        fontSize: 12,
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+        letterSpacing: 1,
+    },
 });
