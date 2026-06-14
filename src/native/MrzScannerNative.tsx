@@ -252,6 +252,7 @@ export function MrzScannerNative({
     colorAnim.setValue(0);
     pulseAnim.setValue(1);
     setScanState('idle');
+    setIsErrorScan(null);
   }
 
   if (!ExpoMlkitOcr) {
@@ -336,6 +337,12 @@ export function MrzScannerNative({
           <View style={styles.sideMask} />
         </View>
         <View style={styles.bottomMask} />
+      </View>
+
+      <View style={styles.rapel}>
+        <Text style={styles.rapelText}>
+          Veillez scanner le dos de la pièce pour les carte d'identité svp
+        </Text>
       </View>
 
       {/* Statut */}
@@ -426,7 +433,23 @@ const styles = StyleSheet.create({
   },
   spinner: { position: 'absolute', top: 8, right: 8 },
   successIcon: { fontSize: 28, fontWeight: '700' },
-
+  rapel: {
+    position: 'absolute',
+    top: 150,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+  },
+  rapelText: {
+    color: '#bdbabac7',
+    fontSize: 10,
+    letterSpacing: 1,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
   statusBar: {
     position: 'absolute',
     bottom: 100,
@@ -507,7 +530,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   mrzText: {
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: 'rgba(0, 0, 0, 0.4)',
     fontSize: 12,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     letterSpacing: 1,
