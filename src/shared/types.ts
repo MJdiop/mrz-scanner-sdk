@@ -79,6 +79,14 @@ export interface MrzScannerNativeProps extends MrzScannerBaseProps {
   successColor?: string;
   /** Afficher le feedback visuel sur la zone détectée (défaut: true) */
   enableMRZFeedBack?: boolean;
+
+  /**
+   * Son joué lors d'un scan réussi.
+   * - true (défaut) : son bundlé dans le SDK
+   * - false         : son désactivé
+   * - require('./beep.mp3') : son custom du projet consommateur
+   */
+  successSound?: boolean | any;
 }
 
 // ─── Props React Web ──────────────────────────────────────────────────────────

@@ -49,6 +49,9 @@
     },
     "vision-camera-mrz-scanner": {
       "optional": true
+    },
+    "expo-audio": {
+      "optional": true
     }
   },
   "devDependencies": {

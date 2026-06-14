@@ -21,6 +21,7 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import type { MrzScannerNativeProps, MrzResult } from '../shared/types';
 import { mapMlkitResult } from '../shared/mrz-mapper';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSuccessSound } from '../shared/useSuccessSound';
 
 let ExpoMlkitOcr: any = null;
 
@@ -35,7 +36,7 @@ try {
 } catch {}
 
 const SCAN_INTERVAL_MS = 1500;
-const MAX_ATTEMPTS = 12;
+const MAX_ATTEMPTS = 6;
 
 type ScanState = 'idle' | 'scanning' | 'analyzing' | 'success' | 'failed';
 
@@ -81,11 +82,12 @@ export function MrzScannerNative({
   hint = 'Alignez la zone MRZ dans le cadre',
   frameColor = '#c8ff00',
   successColor = '#34d399',
+  successSound = true,
 }: MrzScannerNativeProps): ReactElement {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [attempts, setAttempts] = useState(0);
-  const [enableTorch, setEnableTorch] = useState(false);
+  const { play: playSuccessSound } = useSuccessSound(successSound);
 
   const cameraRef = useRef<CameraView>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -97,6 +99,9 @@ export function MrzScannerNative({
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const colorAnim = useRef(new Animated.Value(0)).current;
   const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
+  const [enableTorch, setEnableTorch] = useState(false);
+
+  // const { playSound } = usePlaySound();
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -155,16 +160,16 @@ export function MrzScannerNative({
       });
       if (!photo || !isMountedRef.current) return;
 
-      // 2. Crop sur les 38% bas (zone MRZ)
+      // TEST 2 : crop bas 50% (plus large que 38%)
       const cropped = await manipulateAsync(
         photo.uri,
         [
           {
             crop: {
               originX: 0,
-              originY: Math.floor(photo.height * 0.62),
+              originY: Math.floor(photo.height * 0.5),
               width: photo.width,
-              height: Math.floor(photo.height * 0.38),
+              height: Math.floor(photo.height * 0.5),
             },
           },
         ],
@@ -175,17 +180,9 @@ export function MrzScannerNative({
       if (isMountedRef.current) setScanState('analyzing');
 
       // 3. OCR local via expo-mlkit-ocr
-      // recognizeText retourne { text: string, blocks: [...] }
       const ocrResult = await ExpoMlkitOcr.recognizeText(cropped.uri);
-      // ── DEBUG — à retirer en production ─────────────────────────────────
-      console.log('[MRZ] Photo size:', photo.width, 'x', photo.height);
-      console.log('[MRZ] OCR raw result:', JSON.stringify(ocrResult));
 
-      // // 4. Extraire le texte brut de tous les blocs
-      // const fullText = ocrResult
-      //   .map((block: any) => block.text ?? block.value ?? '')
-      //   .join('\n');
-      // ✅ Correct — extraire text + blocks séparément
+      // 4 Correct — extraire text + blocks séparément
       let fullText = '';
       let blocks: any[] | undefined;
 
@@ -198,17 +195,11 @@ export function MrzScannerNative({
         fullText = ocrResult.map((b: any) => b.text ?? '').join('\n');
         blocks = ocrResult;
       }
-      console.log('[MRZ] fullText:', fullText);
 
       // 5. Parser la MRZ depuis le texte OCR
       // const result: MrzResult | null = mapMlkitResult(fullText);
       // ✅ Correct
       const result: MrzResult | null = mapMlkitResult(fullText, blocks);
-
-      console.log(
-        '[MRZ] Parse result:',
-        result ? JSON.stringify(result) : 'null',
-      );
 
       if (!result || !isMountedRef.current) {
         // MRZ non détectée → retry
@@ -229,11 +220,12 @@ export function MrzScannerNative({
       // 6. Succès
       stopScan();
       setScanState('success');
+      playSuccessSound();
       flashSuccess();
       Haptics?.notificationAsync?.(Haptics?.NotificationFeedbackType?.Success);
       setTimeout(() => {
         if (isMountedRef.current) onSuccess(result);
-      }, 500);
+      }, 800);
     } catch (err) {
       if (isMountedRef.current) setScanState('scanning');
     } finally {
@@ -293,11 +285,6 @@ export function MrzScannerNative({
     );
   }
 
-  const borderColor = colorAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [frameColor, successColor],
-  });
-
   return (
     <View style={styles.container}>
       {/* Caméra plein écran */}
@@ -315,16 +302,21 @@ export function MrzScannerNative({
         <View style={styles.middleRow}>
           <View style={styles.sideMask} />
 
-          {/* Cadre animé */}
-          <Animated.View
-            style={[
-              styles.frame,
-              {
-                borderColor,
-                transform: [{ scale: pulseAnim }],
-              },
-            ]}
-          >
+          {/* Cadre ID card style Dynamsoft */}
+          <Animated.View style={[styles.frame]}>
+            {/* Ligne MRZ preview en bas du cadre */}
+            <View style={styles.mrzPreview}>
+              <Text style={styles.mrzText}>
+                {'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<'}
+              </Text>
+              <Text style={styles.mrzText}>
+                {'0000000000SEN000000M00000000000000000'}
+              </Text>
+              <Text style={styles.mrzText}>
+                {'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<'}
+              </Text>
+            </View>
+
             {scanState === 'analyzing' && (
               <ActivityIndicator
                 size="small"
@@ -358,7 +350,7 @@ export function MrzScannerNative({
             style={styles.retryBtn}
             onPress={() => {
               reset();
-              setTimeout(startScan, 200);
+              setTimeout(startScan, 800);
             }}
           >
             <Text style={styles.retryText}>Réessayer</Text>
@@ -370,15 +362,15 @@ export function MrzScannerNative({
       {onClose && (
         <>
           <Pressable
-            style={[styles.closeBtn, { right: 100 }]}
+            style={[styles.closeBtn, { left: 20, top: 55 }]}
             onPress={() => setEnableTorch(!enableTorch)}
             hitSlop={12}
           >
             <Text style={styles.closeTxt}>
               {enableTorch ? (
-                <MaterialIcons name="flashlight-off" size={20} color="white" />
+                <MaterialIcons name="flashlight-off" size={22} color="white" />
               ) : (
-                <MaterialIcons name="flashlight-on" size={20} color="white" />
+                <MaterialIcons name="flashlight-on" size={22} color="white" />
               )}
             </Text>
           </Pressable>
@@ -416,14 +408,12 @@ const styles = StyleSheet.create({
 
   overlay: { ...StyleSheet.absoluteFill },
   topMask: { flex: 3, backgroundColor: 'rgba(0,0,0,0.55)' },
-  middleRow: { flexDirection: 'row', height: 100 },
-  sideMask: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' },
+  middleRow: { flexDirection: 'row', height: 250 },
+  sideMask: { flex: 0.2, backgroundColor: 'rgba(0,0,0,0.55)' },
   bottomMask: { flex: 2, backgroundColor: 'rgba(0,0,0,0.55)' },
 
   frame: {
     flex: 5,
-    borderWidth: 2,
-    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -491,9 +481,28 @@ const styles = StyleSheet.create({
 
   closeBtn: {
     position: 'absolute',
-    top: Platform.OS === 'ios' ? 56 : 20,
+    top: 50,
     right: 20,
     padding: 10,
   },
   closeTxt: { color: '#fff', fontSize: 22 },
+  mrzPreview: {
+    position: 'absolute',
+    bottom: 8,
+    left: 6,
+    right: 6,
+    height: 70,
+    backgroundColor: 'rgba(0, 0, 0, 0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 3,
+    padding: 4,
+    gap: 2,
+  },
+  mrzText: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    letterSpacing: 1,
+  },
 });
