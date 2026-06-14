@@ -64,6 +64,10 @@ export interface MrzScannerNativeProps extends MrzScannerBaseProps {
      * - require('./beep.mp3') : son custom du projet consommateur
      */
     successSound?: boolean | any;
+    /**
+     * Couleur du bouton de réessai (défaut: "#c8ff00")
+     */
+    retryBtnBackgroundColor?: string;
 }
 export interface MrzScannerWebProps extends MrzScannerBaseProps {
     /** Largeur du composant (défaut: "100%") */

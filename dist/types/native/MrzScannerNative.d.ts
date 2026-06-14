@@ -16,4 +16,4 @@ import type { MrzScannerNativeProps } from '../shared/types';
  *   npx expo install expo-camera expo-image-manipulator expo-mlkit-ocr
  *   npx expo run:ios
  */
-export declare function MrzScannerNative({ onSuccess, onError, onClose, hint, frameColor, successColor, successSound, }: MrzScannerNativeProps): ReactElement;
+export declare function MrzScannerNative({ onSuccess, onError, onClose, hint, frameColor, successColor, successSound, retryBtnBackgroundColor, }: MrzScannerNativeProps): ReactElement;

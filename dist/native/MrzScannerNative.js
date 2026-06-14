@@ -49,10 +49,11 @@ function getStatusLabel(state, attempts, hint) {
  *   npx expo install expo-camera expo-image-manipulator expo-mlkit-ocr
  *   npx expo run:ios
  */
-export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez la zone MRZ dans le cadre', frameColor = '#c8ff00', successColor = '#34d399', successSound = true, }) {
+export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez la zone MRZ dans le cadre', frameColor = '#c8ff00', successColor = '#34d399', successSound = true, retryBtnBackgroundColor = '#c8ff00', }) {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanState, setScanState] = useState('idle');
     const [attempts, setAttempts] = useState(0);
+    const [isErrorScan, setIsErrorScan] = useState(null);
     const { play: playSuccessSound } = useSuccessSound(successSound);
     const cameraRef = useRef(null);
     const intervalRef = useRef(null);
@@ -64,7 +65,6 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
     const colorAnim = useRef(new Animated.Value(0)).current;
     const pulseLoopRef = useRef(null);
     const [enableTorch, setEnableTorch] = useState(false);
-    // const { playSound } = usePlaySound();
     useEffect(() => {
         isMountedRef.current = true;
         return () => {
@@ -161,6 +161,7 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
                     stopScan();
                     setScanState('failed');
                     onError === null || onError === void 0 ? void 0 : onError(new Error(`MRZ non détectée après ${MAX_ATTEMPTS} tentatives.`));
+                    setIsErrorScan(`MRZ non détectée après ${MAX_ATTEMPTS} tentatives.`);
                 }
                 else {
                     setScanState('scanning');
@@ -213,7 +214,12 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
     if (!permission.granted) {
         return (_jsxs(View, { style: styles.permContainer, children: [_jsx(Text, { style: styles.permText, children: "Acc\u00E8s \u00E0 la cam\u00E9ra requis pour scanner le document." }), _jsx(Pressable, { style: styles.permBtn, onPress: requestPermission, children: _jsx(Text, { style: styles.permBtnText, children: "Autoriser la cam\u00E9ra" }) })] }));
     }
-    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan, enableTorch: enableTorch }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [styles.frame], children: [_jsxs(View, { style: styles.mrzPreview, children: [_jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' }), _jsx(Text, { style: styles.mrzText, children: '0000000000SEN000000M00000000000000000' }), _jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' })] }), scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: getStatusLabel(scanState, attempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, pointerEvents: "box-none", children: _jsx(Pressable, { style: styles.retryBtn, onPress: () => {
+    return (_jsxs(View, { style: styles.container, children: [_jsx(CameraView, { ref: cameraRef, style: StyleSheet.absoluteFill, facing: "back", onCameraReady: startScan, enableTorch: enableTorch }), _jsxs(View, { style: styles.overlay, pointerEvents: "none", children: [_jsx(View, { style: styles.topMask }), _jsxs(View, { style: styles.middleRow, children: [_jsx(View, { style: styles.sideMask }), _jsxs(Animated.View, { style: [styles.frame], children: [_jsxs(View, { style: styles.mrzPreview, children: [_jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' }), _jsx(Text, { style: styles.mrzText, children: '0000000000SEN000000M00000000000000000' }), _jsx(Text, { style: styles.mrzText, children: 'P<SEN<<<<<<<<<<<<<<<<<<<<NAME<<<<<<<<' })] }), scanState === 'analyzing' && (_jsx(ActivityIndicator, { size: "small", color: "rgba(255,255,255,0.8)", style: styles.spinner })), scanState === 'success' && (_jsx(Text, { style: [styles.successIcon, { color: successColor }], children: "\u2713" }))] }), _jsx(View, { style: styles.sideMask })] }), _jsx(View, { style: styles.bottomMask })] }), _jsx(View, { style: styles.statusBar, pointerEvents: "none", children: _jsx(Text, { style: styles.statusText, children: isErrorScan
+                        ? isErrorScan
+                        : getStatusLabel(scanState, attempts, hint) }) }), scanState === 'failed' && (_jsx(View, { style: styles.retryRow, pointerEvents: "box-none", children: _jsx(Pressable, { style: [
+                        styles.retryBtn,
+                        { backgroundColor: retryBtnBackgroundColor },
+                    ], onPress: () => {
                         reset();
                         setTimeout(startScan, 1000);
                     }, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }) })), onClose && (_jsxs(_Fragment, { children: [_jsx(Pressable, { style: [styles.closeBtn, { left: 20, top: 55 }], onPress: () => setEnableTorch(!enableTorch), hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: enableTorch ? (_jsx(MaterialIcons, { name: "flashlight-off", size: 22, color: "white" })) : (_jsx(MaterialIcons, { name: "flashlight-on", size: 22, color: "white" })) }) }), _jsx(Pressable, { style: styles.closeBtn, onPress: onClose, hitSlop: 12, children: _jsx(Text, { style: styles.closeTxt, children: "\u2715" }) })] }))] }));
@@ -304,10 +310,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     retryBtn: {
-        backgroundColor: '#c8ff00',
         borderRadius: 8,
         paddingHorizontal: 28,
         paddingVertical: 12,
+        marginTop: 12,
     },
     retryText: { color: '#000', fontWeight: '700', fontSize: 15 },
     closeBtn: {
