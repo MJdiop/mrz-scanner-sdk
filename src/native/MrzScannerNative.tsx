@@ -83,10 +83,12 @@ export function MrzScannerNative({
   frameColor = '#c8ff00',
   successColor = '#34d399',
   successSound = true,
+  retryBtnBackgroundColor = '#c8ff00',
 }: MrzScannerNativeProps): ReactElement {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanState, setScanState] = useState<ScanState>('idle');
   const [attempts, setAttempts] = useState(0);
+  const [isErrorScan, setIsErrorScan] = useState<string | null>(null);
   const { play: playSuccessSound } = useSuccessSound(successSound);
 
   const cameraRef = useRef<CameraView>(null);
@@ -100,8 +102,6 @@ export function MrzScannerNative({
   const colorAnim = useRef(new Animated.Value(0)).current;
   const pulseLoopRef = useRef<Animated.CompositeAnimation | null>(null);
   const [enableTorch, setEnableTorch] = useState(false);
-
-  // const { playSound } = usePlaySound();
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -212,6 +212,7 @@ export function MrzScannerNative({
           onError?.(
             new Error(`MRZ non détectée après ${MAX_ATTEMPTS} tentatives.`),
           );
+          setIsErrorScan(`MRZ non détectée après ${MAX_ATTEMPTS} tentatives.`);
         } else {
           setScanState('scanning');
         }
@@ -340,7 +341,9 @@ export function MrzScannerNative({
       {/* Statut */}
       <View style={styles.statusBar} pointerEvents="none">
         <Text style={styles.statusText}>
-          {getStatusLabel(scanState, attempts, hint)}
+          {isErrorScan
+            ? isErrorScan
+            : getStatusLabel(scanState, attempts, hint)}
         </Text>
       </View>
 
@@ -348,7 +351,10 @@ export function MrzScannerNative({
       {scanState === 'failed' && (
         <View style={styles.retryRow} pointerEvents="box-none">
           <Pressable
-            style={styles.retryBtn}
+            style={[
+              styles.retryBtn,
+              { backgroundColor: retryBtnBackgroundColor },
+            ]}
             onPress={() => {
               reset();
               setTimeout(startScan, 1000);
@@ -473,10 +479,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   retryBtn: {
-    backgroundColor: '#c8ff00',
     borderRadius: 8,
     paddingHorizontal: 28,
     paddingVertical: 12,
+    marginTop: 12,
   },
   retryText: { color: '#000', fontWeight: '700', fontSize: 15 },
 
