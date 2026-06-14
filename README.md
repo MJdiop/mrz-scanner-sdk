@@ -194,12 +194,13 @@ interface MrzResult {
 
 ### Documents supportés
 
-| Type         | Document               | Lignes       | Parser                    |
-| ------------ | ---------------------- | ------------ | ------------------------- |
-| TD3_PASSPORT | Passeport              | 2 × 44 chars | mrz-fast (correction OCR) |
-| TD1_ID       | Carte d'identité       | 3 × 30 chars | mrz                       |
-| TD2          | Visa / titre de voyage | 2 × 36 chars | mrz                       |
-| DL           | Permis de conduire     | variable     | heuristique               |
+| Type         | Document         | Lignes       | Parser                    |
+| ------------ | ---------------- | ------------ | ------------------------- |
+| TD3_PASSPORT | Passeport        | 2 × 44 chars | mrz-fast (correction OCR) |
+| TD1_ID       | Carte d'identité | 3 × 30 chars | mrz                       |
+
+ <!--         | TD2              | Visa / titre de voyage | 2 × 36 chars              | mrz -->         |
+ <!--         | DL               | Permis de conduire     | variable                  | heuristique --> |
 
 ---
 
@@ -210,7 +211,7 @@ interface MrzResult {
 ```
 expo-camera → takePictureAsync()
   ↓
-expo-image-manipulator → crop 38% bas (zone MRZ)
+expo-image-manipulator → crop 50% bas (zone MRZ)
   ↓
 expo-mlkit-ocr → OCR local (Apple Vision / Google MLKit)
   ↓
@@ -271,7 +272,7 @@ module.exports = config;
 
 ---
 
-## Structure du package
+<!-- ## Structure du package
 
 ````
 src/
@@ -287,11 +288,14 @@ src/
 │   └── MrzScannerNative.tsx     # Composant React Native
 └── web/
     └── MrzScannerWeb.tsx        # Composant React web
-```                               |
+```                               | -->
 
 ---
 
 ## Licence
 
 MIT © ScanID Africa
-````
+
+```
+
+```
