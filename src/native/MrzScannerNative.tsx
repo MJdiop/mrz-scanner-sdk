@@ -484,7 +484,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     marginTop: 12,
   },
-  retryText: { color: '#000', fontWeight: '700', fontSize: 15 },
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 
   closeBtn: {
     position: 'absolute',
