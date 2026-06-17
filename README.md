@@ -272,26 +272,6 @@ module.exports = config;
 
 ---
 
-<!-- ## Structure du package
-
-````
-src/
-├── assets/
-│   └── successSound.ts          # Bip WAV encodé en base64
-├── shared/
-│   ├── types.ts                 # Types TypeScript publics
-│   ├── api-client.ts            # Client fetch (self-hosted + cloud)
-│   ├── mrz-mapper.ts            # OCR text → MrzResult (gestion Android rotated)
-│   ├── useScanner.ts            # Hook boucle de scan automatique (web)
-│   └── useSuccessSound.ts       # Hook son de succès (expo-audio / expo-av)
-├── native/
-│   └── MrzScannerNative.tsx     # Composant React Native
-└── web/
-    └── MrzScannerWeb.tsx        # Composant React web
-```                               | -->
-
----
-
 ## Licence
 
 MIT © ScanID Africa
