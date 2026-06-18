@@ -1,14 +1,12 @@
-var _a;
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useSdkLicence } from '../shared/licence';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-const SDK_CONFIG = {
-    sdkKey: (_a = process.env.EXPO_PUBLIC_SCANID_SDK_KEY) !== null && _a !== void 0 ? _a : 'sdk_live_xxx',
-    apiUrl: process.env.EXPO_PUBLIC_SCANID_API_URL, // absent = cloud ScanID Africa
-    appId: 'com.seetko.app',
-};
-export function AppInitializer({ children }) {
-    const { licenceState, isLicenceValid, licenceError, revalidate } = useSdkLicence(SDK_CONFIG);
+export function AppInitializer({ sdkKey, apiUrl, appId, children, }) {
+    const { licenceState, isLicenceValid, licenceError, revalidate } = useSdkLicence({
+        sdkKey,
+        apiUrl,
+        appId,
+    });
     // ── Validation en cours ──────────────────────────────────────────────────────
     if (licenceState === 'idle' || licenceState === 'validating') {
         return (_jsxs(View, { style: styles.center, children: [_jsx(ActivityIndicator, { size: "large", color: "#c8ff00" }), _jsx(Text, { style: styles.text, children: "Initialisation\u2026" })] }));
