@@ -176,6 +176,7 @@ async function getCachedToken(config) {
         // Vérifier côté serveur
         const baseUrl = (_b = (_a = config.apiUrl) === null || _a === void 0 ? void 0 : _a.replace(/\/$/, '')) !== null && _b !== void 0 ? _b : CLOUD_BASE_URL;
         console.log('🚀 ~ getCachedToken ~ baseUrl:', baseUrl);
+        console.log('🚀 ~ getCachedToken ~ `${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`:', `${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`);
         const res = await fetch(`${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`);
         if (!res.ok) {
             await deleteSecure(STORAGE_KEY);
@@ -197,6 +198,10 @@ async function requestToken(config) {
     var _a, _b, _c;
     const baseUrl = (_b = (_a = config.apiUrl) === null || _a === void 0 ? void 0 : _a.replace(/\/$/, '')) !== null && _b !== void 0 ? _b : CLOUD_BASE_URL;
     console.log('🚀 ~ requestToken ~ baseUrl:', baseUrl);
+    console.log('🚀 ~ requestToken ~ stringify:', JSON.stringify({
+        sdkKey: config.sdkKey,
+        appId: config.appId,
+    }));
     const response = await fetch(`${baseUrl}/sdk/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
