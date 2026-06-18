@@ -221,6 +221,10 @@ async function getCachedToken(config: SdkLicenceConfig): Promise<{
     const baseUrl = config.apiUrl?.replace(/\/$/, '') ?? CLOUD_BASE_URL;
     console.log('🚀 ~ getCachedToken ~ baseUrl:', baseUrl);
 
+    console.log(
+      '🚀 ~ getCachedToken ~ `${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`:',
+      `${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`,
+    );
     const res = await fetch(
       `${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`,
     );
@@ -255,6 +259,13 @@ async function requestToken(config: SdkLicenceConfig): Promise<{
 }> {
   const baseUrl = config.apiUrl?.replace(/\/$/, '') ?? CLOUD_BASE_URL;
   console.log('🚀 ~ requestToken ~ baseUrl:', baseUrl);
+  console.log(
+    '🚀 ~ requestToken ~ stringify:',
+    JSON.stringify({
+      sdkKey: config.sdkKey,
+      appId: config.appId,
+    }),
+  );
   const response = await fetch(`${baseUrl}/sdk/validate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

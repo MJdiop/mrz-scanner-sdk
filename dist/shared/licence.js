@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-const CLOUD_BASE_URL = 'https://api.scanid.africa';
+// const CLOUD_BASE_URL = 'https://api.scanid.africa'
+const CLOUD_BASE_URL = 'http://localhost:3000';
 const STORAGE_KEY = 'scanid_sdk_token';
 // Import conditionnel SecureStore (expo-secure-store)
 // Fallback sur AsyncStorage si SecureStore absent
@@ -60,6 +61,7 @@ export function useSdkLicence(config) {
         try {
             // 1. Vérifier le cache SecureStore
             const cached = await getCachedToken(config);
+            console.log('🚀 ~ useSdkLicence ~ cached:', cached);
             if (cached && isMountedRef.current) {
                 setStatus({
                     state: 'valid',
@@ -72,6 +74,7 @@ export function useSdkLicence(config) {
             }
             // 2. Pas de cache valide → appel API
             const result = await requestToken(config);
+            console.log('🚀 ~ useSdkLicence ~ result:', result);
             if (!isMountedRef.current)
                 return;
             // 3. Stocker le token dans SecureStore
@@ -160,6 +163,7 @@ async function getCachedToken(config) {
     var _a, _b;
     try {
         const raw = await readSecure(STORAGE_KEY);
+        console.log('🚀 ~ getCachedToken ~ raw:', raw);
         if (!raw)
             return null;
         const { token, plan, expiresAt } = JSON.parse(raw);
@@ -171,6 +175,7 @@ async function getCachedToken(config) {
         }
         // Vérifier côté serveur
         const baseUrl = (_b = (_a = config.apiUrl) === null || _a === void 0 ? void 0 : _a.replace(/\/$/, '')) !== null && _b !== void 0 ? _b : CLOUD_BASE_URL;
+        console.log('🚀 ~ getCachedToken ~ baseUrl:', baseUrl);
         const res = await fetch(`${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`);
         if (!res.ok) {
             await deleteSecure(STORAGE_KEY);
@@ -191,6 +196,7 @@ async function clearStoredToken() {
 async function requestToken(config) {
     var _a, _b, _c;
     const baseUrl = (_b = (_a = config.apiUrl) === null || _a === void 0 ? void 0 : _a.replace(/\/$/, '')) !== null && _b !== void 0 ? _b : CLOUD_BASE_URL;
+    console.log('🚀 ~ requestToken ~ baseUrl:', baseUrl);
     const response = await fetch(`${baseUrl}/sdk/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -199,6 +205,7 @@ async function requestToken(config) {
             appId: config.appId,
         }),
     });
+    console.log('🚀 ~ requestToken ~ response:', response);
     const json = await response.json();
     if (!response.ok) {
         throw new Error((_c = json === null || json === void 0 ? void 0 : json.message) !== null && _c !== void 0 ? _c : `Erreur serveur (${response.status})`);
