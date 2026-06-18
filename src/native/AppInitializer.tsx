@@ -1,19 +1,27 @@
-import { useSdkLicence } from '../shared/licence'
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
-
-const SDK_CONFIG = {
-  sdkKey: process.env.EXPO_PUBLIC_SCANID_SDK_KEY ?? 'sdk_live_xxx',
-  apiUrl: process.env.EXPO_PUBLIC_SCANID_API_URL,  // absent = cloud ScanID Africa
-  appId:  'com.seetko.app',
+import { useSdkLicence } from '../shared/licence';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+interface AppInitializerProps {
+  /** Clé SDK obtenue sur scanid.africa — format sdk_live_xxx */
+  sdkKey: string;
+  /** URL self-hosted (optionnel — absent = cloud ScanID Africa) */
+  apiUrl?: string;
+  /** Bundle ID iOS ou Package Name Android — ex: "com.myapp.id" */
+  appId?: string;
+  children: React.ReactNode;
 }
 
-interface Props {
-  children: React.ReactNode
-}
-
-export function AppInitializer({ children }: Props) {
+export function AppInitializer({
+  sdkKey,
+  apiUrl,
+  appId,
+  children,
+}: AppInitializerProps) {
   const { licenceState, isLicenceValid, licenceError, revalidate } =
-    useSdkLicence(SDK_CONFIG)
+    useSdkLicence({
+      sdkKey,
+      apiUrl,
+      appId,
+    });
 
   // ── Validation en cours ──────────────────────────────────────────────────────
   if (licenceState === 'idle' || licenceState === 'validating') {
@@ -22,15 +30,15 @@ export function AppInitializer({ children }: Props) {
         <ActivityIndicator size="large" color="#c8ff00" />
         <Text style={styles.text}>Initialisation…</Text>
       </View>
-    )
+    );
   }
 
   // ── Erreur réseau — app utilisable, scanner bloqué ───────────────────────────
   if (licenceState === 'error') {
     // On laisse quand même l'app démarrer — le scanner affichera
     // l'erreur uniquement quand l'utilisateur essaiera de scanner
-    console.warn('[ScanID] Erreur réseau licence:', licenceError)
-    return <>{children}</>
+    console.warn('[ScanID] Erreur réseau licence:', licenceError);
+    return <>{children}</>;
   }
 
   // ── Licence invalide — clé expirée ou révoquée ───────────────────────────────
@@ -39,14 +47,15 @@ export function AppInitializer({ children }: Props) {
       <View style={styles.center}>
         <Text style={styles.errorTitle}>🔑 Licence expirée</Text>
         <Text style={styles.errorText}>
-          {licenceError ?? 'Clé SDK invalide. Renouvelez votre abonnement sur scanid.africa'}
+          {licenceError ??
+            'Clé SDK invalide. Renouvelez votre abonnement sur scanid.africa'}
         </Text>
       </View>
-    )
+    );
   }
 
   // ── Licence valide ───────────────────────────────────────────────────────────
-  return <>{children}</>
+  return <>{children}</>;
 }
 
 const styles = StyleSheet.create({
@@ -75,4 +84,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-})
+});
