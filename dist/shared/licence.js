@@ -88,6 +88,7 @@ export function useSdkLicence(config) {
             scheduleRevalidation(result.expiresAt);
         }
         catch (err) {
+            console.log('🚀 ~ useSdkLicence ~ err:', err);
             if (!isMountedRef.current)
                 return;
             const isNetworkError = ((_a = err.message) === null || _a === void 0 ? void 0 : _a.includes('fetch')) ||
@@ -198,10 +199,10 @@ async function requestToken(config) {
     var _a, _b, _c;
     const baseUrl = (_b = (_a = config.apiUrl) === null || _a === void 0 ? void 0 : _a.replace(/\/$/, '')) !== null && _b !== void 0 ? _b : CLOUD_BASE_URL;
     console.log('🚀 ~ requestToken ~ baseUrl:', baseUrl);
-    console.log('🚀 ~ requestToken ~ stringify:', JSON.stringify({
+    console.log('🚀 ~ requestToken ~ stringify:', {
         sdkKey: config.sdkKey,
         appId: config.appId,
-    }));
+    });
     const response = await fetch(`${baseUrl}/sdk/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

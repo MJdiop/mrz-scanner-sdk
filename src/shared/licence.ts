@@ -95,7 +95,6 @@ export function useSdkLicence(config: SdkLicenceConfig) {
     try {
       // 1. Vérifier le cache SecureStore
       const cached = await getCachedToken(config);
-      console.log('🚀 ~ useSdkLicence ~ cached:', cached);
       if (cached && isMountedRef.current) {
         setStatus({
           state: 'valid',
@@ -109,7 +108,6 @@ export function useSdkLicence(config: SdkLicenceConfig) {
 
       // 2. Pas de cache valide → appel API
       const result = await requestToken(config);
-      console.log('🚀 ~ useSdkLicence ~ result:', result);
       if (!isMountedRef.current) return;
 
       // 3. Stocker le token dans SecureStore
@@ -124,7 +122,6 @@ export function useSdkLicence(config: SdkLicenceConfig) {
 
       scheduleRevalidation(result.expiresAt);
     } catch (err: any) {
-      console.log('🚀 ~ useSdkLicence ~ err:', err);
       if (!isMountedRef.current) return;
 
       const isNetworkError =
@@ -206,7 +203,6 @@ async function getCachedToken(config: SdkLicenceConfig): Promise<{
 } | null> {
   try {
     const raw = await readSecure(STORAGE_KEY);
-    console.log('🚀 ~ getCachedToken ~ raw:', raw);
     if (!raw) return null;
 
     const { token, plan, expiresAt } = JSON.parse(raw);
@@ -220,12 +216,7 @@ async function getCachedToken(config: SdkLicenceConfig): Promise<{
 
     // Vérifier côté serveur
     const baseUrl = config.apiUrl?.replace(/\/$/, '') ?? CLOUD_BASE_URL;
-    console.log('🚀 ~ getCachedToken ~ baseUrl:', baseUrl);
 
-    console.log(
-      '🚀 ~ getCachedToken ~ `${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`:',
-      `${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`,
-    );
     const res = await fetch(
       `${baseUrl}/sdk/verify?token=${encodeURIComponent(token)}`,
     );
@@ -259,11 +250,7 @@ async function requestToken(config: SdkLicenceConfig): Promise<{
   expiresAt: string;
 }> {
   const baseUrl = config.apiUrl?.replace(/\/$/, '') ?? CLOUD_BASE_URL;
-  console.log('🚀 ~ requestToken ~ baseUrl:', baseUrl);
-  console.log('🚀 ~ requestToken ~ stringify:', {
-    sdkKey: config.sdkKey,
-    appId: config.appId,
-  });
+
   const response = await fetch(`${baseUrl}/sdk/validate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -272,7 +259,6 @@ async function requestToken(config: SdkLicenceConfig): Promise<{
       appId: config.appId,
     }),
   });
-  console.log('🚀 ~ requestToken ~ response:', response);
 
   const json = await response.json();
 
