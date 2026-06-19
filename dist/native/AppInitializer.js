@@ -1,6 +1,6 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { useSdkLicence } from '../shared/licence';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, } from 'react-native';
 export function AppInitializer({ sdkKey, apiUrl, appId, children, }) {
     const { licenceState, isLicenceValid, licenceError, revalidate } = useSdkLicence({
         sdkKey,
@@ -11,16 +11,13 @@ export function AppInitializer({ sdkKey, apiUrl, appId, children, }) {
     if (licenceState === 'idle' || licenceState === 'validating') {
         return (_jsxs(View, { style: styles.center, children: [_jsx(ActivityIndicator, { size: "large", color: "#c8ff00" }), _jsx(Text, { style: styles.text, children: "Initialisation\u2026" })] }));
     }
-    // ── Erreur réseau — app utilisable, scanner bloqué ───────────────────────────
-    if (licenceState === 'error') {
-        // On laisse quand même l'app démarrer — le scanner affichera
-        // l'erreur uniquement quand l'utilisateur essaiera de scanner
-        console.warn('[ScanID] Erreur réseau licence:', licenceError);
-        return _jsx(_Fragment, { children: children });
-    }
-    // ── Licence invalide — clé expirée ou révoquée ───────────────────────────────
-    if (!isLicenceValid && licenceState === 'invalid') {
-        return (_jsxs(View, { style: styles.center, children: [_jsx(Text, { style: styles.errorTitle, children: "\uD83D\uDD11 Licence expir\u00E9e" }), _jsx(Text, { style: styles.errorText, children: licenceError !== null && licenceError !== void 0 ? licenceError : 'Clé SDK invalide. Renouvelez votre abonnement sur scanid.africa' })] }));
+    // ✅ Après — bloque tant que isLicenceValid n'est pas true
+    // ── Licence invalide — clé expirée ou révoquée
+    if (!isLicenceValid) {
+        const isNetworkError = licenceState === 'error';
+        return (_jsxs(View, { style: styles.center, children: [_jsx(Text, { style: styles.errorTitle, children: isNetworkError ? '📡 Connexion requise' : '🔑 Licence invalide' }), _jsx(Text, { style: styles.errorText, children: isNetworkError
+                        ? 'Impossible de valider votre licence. Vérifiez votre connexion internet.'
+                        : (licenceError !== null && licenceError !== void 0 ? licenceError : 'Clé SDK invalide. Renouvelez votre abonnement sur scanid.africa') }), isNetworkError && (_jsx(Pressable, { style: styles.retryBtn, onPress: revalidate, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }))] }));
     }
     // ── Licence valide ───────────────────────────────────────────────────────────
     return _jsx(_Fragment, { children: children });
@@ -50,5 +47,17 @@ const styles = StyleSheet.create({
         fontSize: 14,
         textAlign: 'center',
         lineHeight: 22,
+    },
+    retryBtn: {
+        marginTop: 24,
+        backgroundColor: '#c8ff00',
+        borderRadius: 8,
+        paddingHorizontal: 28,
+        paddingVertical: 12,
+    },
+    retryText: {
+        color: '#000',
+        fontWeight: '700',
+        fontSize: 15,
     },
 });
