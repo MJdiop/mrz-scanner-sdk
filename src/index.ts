@@ -1,9 +1,8 @@
 // ─── Composants ──────────────────────────────────────────────────────────────
 export { MrzScannerNative } from './native/MrzScannerNative';
 export { MrzScannerWeb } from './web/MrzScannerWeb';
-export { AppInitializer } from './native/AppInitializer';
-// ─── Hooks (usage avancé) ─────────────────────────────────────────────────────
 
+// ─── Hooks (usage avancé) ─────────────────────────────────────────────────────
 export { useSdkLicence } from './shared/licence';
 
 // ─── Utilitaires ──────────────────────────────────────────────────────────────

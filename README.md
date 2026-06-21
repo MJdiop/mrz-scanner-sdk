@@ -85,30 +85,6 @@ Obtenez votre clé SDK sur [scanid.africa](https://scanid.africa).
 
 ---
 
-### 2. (Optionnel) Pré-valider la licence au démarrage
-
-`AppInitializer` est un confort UX — il pré-charge la licence avant que l'utilisateur navigue où que ce soit, pour éviter un court spinner dans chaque écran de scan.
-
-```tsx
-// app/_layout.tsx (Expo Router)
-import { AppInitializer } from '@scanid-africa/mrz-scanner';
-import { Stack } from 'expo-router';
-
-export default function RootLayout() {
-  return (
-    <AppInitializer
-      sdkKey={process.env.EXPO_PUBLIC_SCANID_SDK_KEY!}
-      apiUrl={process.env.EXPO_PUBLIC_SCANID_API_URL} // absent = cloud ScanID Africa
-      appId="com.myapp.id"
-    >
-      <Stack />
-    </AppInitializer>
-  );
-}
-```
-
----
-
 ## Usage React web
 
 ```tsx
@@ -141,16 +117,7 @@ const MrzScannerWeb = dynamic(
 
 ---
 
-## Props
-
-### AppInitializer
-
-| Prop       | Type              | Défaut | Description                                               |
-| ---------- | ----------------- | ------ | --------------------------------------------------------- |
-| `sdkKey`   | `string`          | requis | Clé SDK obtenue sur scanid.africa — format `sdk_live_xxx` |
-| `apiUrl`   | `string`          | —      | URL self-hosted. Absent = cloud ScanID Africa             |
-| `appId`    | `string`          | —      | Bundle ID iOS ou Package Name Android                     |
-| `children` | `React.ReactNode` | requis | Contenu de l'app à protéger                               |
+## Props |
 
 ### MrzScannerNative
 
@@ -174,7 +141,7 @@ Un bip est joué lors d'un scan réussi (bundlé dans le SDK, aucun fichier requ
 
 ## Sécurité de la licence
 
-`MrzScannerNative` vérifie sa clé directement, à chaque montage — il est impossible de l'utiliser sans `sdkKey` valide, avec ou sans `AppInitializer` :
+`MrzScannerNative` vérifie sa clé directement, à chaque montage — il est impossible de l'utiliser sans `sdkKey` valide.
 
 ```tsx
 // Son par défaut (bundlé)
