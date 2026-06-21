@@ -352,6 +352,7 @@ export function MrzScannerNative({
         facing="back"
         onCameraReady={startScan}
         enableTorch={enableTorch}
+        animateShutter={false}
       />
 
       {/* Overlay masques */}
