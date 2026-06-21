@@ -92,6 +92,17 @@ export interface MrzScannerNativeProps extends MrzScannerBaseProps {
    * Couleur du bouton de réessai (défaut: "#c8ff00")
    */
   retryBtnBackgroundColor?: string;
+
+  /**
+   * Clé SDK obtenue sur scanid.africa — format sdk_live_xxx.
+   * Vérifiée directement par ce composant, comme la clé d'une <MapView>.
+   * Sans clé valide, le scanner refuse de démarrer.
+   */
+  sdkKey: string;
+  /** URL self-hosted (optionnel — absent = cloud ScanID Africa) */
+  apiUrl?: string;
+  /** Bundle ID iOS ou Package Name Android — ex: "com.myapp.id" */
+  appId?: string;
 }
 
 // ─── Props React Web ──────────────────────────────────────────────────────────
@@ -104,3 +115,5 @@ export interface MrzScannerWebProps extends MrzScannerBaseProps {
   /** Classe CSS additionnelle sur le conteneur */
   className?: string;
 }
+
+export type { SdkLicenceConfig } from './licence';

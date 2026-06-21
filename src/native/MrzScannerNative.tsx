@@ -22,6 +22,7 @@ import type { MrzScannerNativeProps, MrzResult } from '../shared/types';
 import { mapMlkitResult } from '../shared/mrz-mapper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSuccessSound } from '../shared/useSuccessSound';
+import { useSdkLicence } from '../shared/licence';
 
 let ExpoMlkitOcr: any = null;
 
@@ -76,6 +77,9 @@ function getStatusLabel(
  *   npx expo run:ios
  */
 export function MrzScannerNative({
+  sdkKey,
+  apiUrl,
+  appId,
   onSuccess,
   onError,
   onClose,
@@ -90,6 +94,12 @@ export function MrzScannerNative({
   const [attempts, setAttempts] = useState(0);
   const [isErrorScan, setIsErrorScan] = useState<string | null>(null);
   const { play: playSuccessSound } = useSuccessSound(successSound);
+
+  const { licenceState, isLicenceValid, licenceError } = useSdkLicence({
+    sdkKey,
+    apiUrl,
+    appId,
+  });
 
   const cameraRef = useRef<CameraView>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -253,6 +263,51 @@ export function MrzScannerNative({
     pulseAnim.setValue(1);
     setScanState('idle');
     setIsErrorScan(null);
+  }
+
+  // ── Garde obligatoire #1 — sdkKey manquant à l'exécution (callers JS sans TS) ─
+  if (!sdkKey) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>⚠️ Configuration manquante</Text>
+        <Text style={styles.errorText}>
+          La prop {'sdkKey'} est obligatoire sur {'<MrzScannerNative>'}.
+        </Text>
+        <Text style={styles.errorCode}>
+          {'<MrzScannerNative sdkKey="sdk_live_..." onSuccess={...} />'}
+        </Text>
+      </View>
+    );
+  }
+
+  // ── Garde obligatoire #2 — validation en cours ───────────────────────────────
+  if (licenceState === 'idle' || licenceState === 'validating') {
+    return (
+      <View style={styles.permContainer}>
+        <ActivityIndicator size="large" color="#c8ff00" />
+        <Text style={[styles.permText, { marginTop: 16 }]}>
+          Validation de licence…
+        </Text>
+      </View>
+    );
+  }
+
+  // ── Garde obligatoire #3 — licence invalide, révoquée, ou erreur réseau ──────
+  if (!isLicenceValid) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorTitle}>🔑 Licence invalide</Text>
+        <Text style={styles.errorText}>
+          {licenceError ?? 'Clé SDK invalide ou expirée.'}
+        </Text>
+        <Text style={styles.errorCode}>scanid.africa</Text>
+        {onClose && (
+          <Pressable style={styles.permBtn} onPress={onClose}>
+            <Text style={styles.permBtnText}>Fermer</Text>
+          </Pressable>
+        )}
+      </View>
+    );
   }
 
   if (!ExpoMlkitOcr) {
