@@ -1,25 +1,35 @@
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
-import { useSdkLicence } from '../shared/licence';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, } from 'react-native';
+import { useSdkLicence } from '../shared/licence';
+/**
+ * AppInitializer — OPTIONNEL.
+ *
+ * `<MrzScannerNative>` vérifie sa propre licence directement (comme une
+ * <MapView apiKey="...">) — ce wrapper n'est donc plus la mécanique de
+ * sécurité, juste une amélioration UX : il pré-valide la clé une fois au
+ * démarrage et affiche un écran de blocage global, pour éviter qu'un
+ * écran de scan s'affiche brièvement avant que sa propre validation
+ * interne ne se résolve.
+ *
+ * Avec ou sans ce wrapper, `<MrzScannerNative sdkKey="...">` est toujours
+ * protégé — le cache SecureStore partagé évite simplement un appel réseau
+ * redondant si la clé a déjà été validée ici.
+ */
 export function AppInitializer({ sdkKey, apiUrl, appId, children, }) {
     const { licenceState, isLicenceValid, licenceError, revalidate } = useSdkLicence({
         sdkKey,
         apiUrl,
         appId,
     });
-    // ── Validation en cours ──────────────────────────────────────────────────────
     if (licenceState === 'idle' || licenceState === 'validating') {
         return (_jsxs(View, { style: styles.center, children: [_jsx(ActivityIndicator, { size: "large", color: "#c8ff00" }), _jsx(Text, { style: styles.text, children: "Initialisation\u2026" })] }));
     }
-    // ✅ Après — bloque tant que isLicenceValid n'est pas true
-    // ── Licence invalide — clé expirée ou révoquée
     if (!isLicenceValid) {
         const isNetworkError = licenceState === 'error';
         return (_jsxs(View, { style: styles.center, children: [_jsx(Text, { style: styles.errorTitle, children: isNetworkError ? '📡 Connexion requise' : '🔑 Licence invalide' }), _jsx(Text, { style: styles.errorText, children: isNetworkError
                         ? 'Impossible de valider votre licence. Vérifiez votre connexion internet.'
                         : (licenceError !== null && licenceError !== void 0 ? licenceError : 'Clé SDK invalide. Renouvelez votre abonnement sur scanid.africa') }), isNetworkError && (_jsx(Pressable, { style: styles.retryBtn, onPress: revalidate, children: _jsx(Text, { style: styles.retryText, children: "R\u00E9essayer" }) }))] }));
     }
-    // ── Licence valide ───────────────────────────────────────────────────────────
     return _jsx(_Fragment, { children: children });
 }
 const styles = StyleSheet.create({

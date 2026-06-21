@@ -7,6 +7,7 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { mapMlkitResult } from '../shared/mrz-mapper';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSuccessSound } from '../shared/useSuccessSound';
+import { useSdkLicence } from '../shared/licence';
 let ExpoMlkitOcr = null;
 // Après — fallback sur le module entier
 const mlkit = require('expo-mlkit-ocr');
@@ -49,12 +50,17 @@ function getStatusLabel(state, attempts, hint) {
  *   npx expo install expo-camera expo-image-manipulator expo-mlkit-ocr
  *   npx expo run:ios
  */
-export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez la zone MRZ dans le cadre', frameColor = '#c8ff00', successColor = '#34d399', successSound = true, retryBtnBackgroundColor = '#c8ff00', }) {
+export function MrzScannerNative({ sdkKey, apiUrl, appId, onSuccess, onError, onClose, hint = 'Alignez la zone MRZ dans le cadre', frameColor = '#c8ff00', successColor = '#34d399', successSound = true, retryBtnBackgroundColor = '#c8ff00', }) {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanState, setScanState] = useState('idle');
     const [attempts, setAttempts] = useState(0);
     const [isErrorScan, setIsErrorScan] = useState(null);
     const { play: playSuccessSound } = useSuccessSound(successSound);
+    const { licenceState, isLicenceValid, licenceError } = useSdkLicence({
+        sdkKey,
+        apiUrl,
+        appId,
+    });
     const cameraRef = useRef(null);
     const intervalRef = useRef(null);
     const isAnalyzingRef = useRef(false);
@@ -205,6 +211,18 @@ export function MrzScannerNative({ onSuccess, onError, onClose, hint = 'Alignez 
         pulseAnim.setValue(1);
         setScanState('idle');
         setIsErrorScan(null);
+    }
+    // ── Garde obligatoire #1 — sdkKey manquant à l'exécution (callers JS sans TS) ─
+    if (!sdkKey) {
+        return (_jsxs(View, { style: styles.errorContainer, children: [_jsx(Text, { style: styles.errorTitle, children: "\u26A0\uFE0F Configuration manquante" }), _jsxs(Text, { style: styles.errorText, children: ["La prop ", 'sdkKey', " est obligatoire sur ", '<MrzScannerNative>', "."] }), _jsx(Text, { style: styles.errorCode, children: '<MrzScannerNative sdkKey="sdk_live_..." onSuccess={...} />' })] }));
+    }
+    // ── Garde obligatoire #2 — validation en cours ───────────────────────────────
+    if (licenceState === 'idle' || licenceState === 'validating') {
+        return (_jsxs(View, { style: styles.permContainer, children: [_jsx(ActivityIndicator, { size: "large", color: "#c8ff00" }), _jsx(Text, { style: [styles.permText, { marginTop: 16 }], children: "Validation de licence\u2026" })] }));
+    }
+    // ── Garde obligatoire #3 — licence invalide, révoquée, ou erreur réseau ──────
+    if (!isLicenceValid) {
+        return (_jsxs(View, { style: styles.errorContainer, children: [_jsx(Text, { style: styles.errorTitle, children: "\uD83D\uDD11 Licence invalide" }), _jsx(Text, { style: styles.errorText, children: licenceError !== null && licenceError !== void 0 ? licenceError : 'Clé SDK invalide ou expirée.' }), _jsx(Text, { style: styles.errorCode, children: "scanid.africa" }), onClose && (_jsx(Pressable, { style: styles.permBtn, onPress: onClose, children: _jsx(Text, { style: styles.permBtnText, children: "Fermer" }) }))] }));
     }
     if (!ExpoMlkitOcr) {
         return (_jsxs(View, { style: styles.errorContainer, children: [_jsx(Text, { style: styles.errorTitle, children: "\u26A0\uFE0F Peer dep manquant" }), _jsx(Text, { style: styles.errorText, children: "Installe expo-mlkit-ocr dans ton projet :" }), _jsx(Text, { style: styles.errorCode, children: "npx expo install expo-mlkit-ocr" }), onClose && (_jsx(Pressable, { style: styles.permBtn, onPress: onClose, children: _jsx(Text, { style: styles.permBtnText, children: "Fermer" }) }))] }));
