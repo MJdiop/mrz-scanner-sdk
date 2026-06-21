@@ -240,5 +240,3 @@ interface MrzResult {
 ## Licence
 
 MIT © ScanID Africa — [scanid.africa](https://scanid.africa)
-
-### Cycle de vie du token
