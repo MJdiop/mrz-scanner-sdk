@@ -92,6 +92,7 @@ src/*.tsx
 src/assets/
 src/native/MrzScannerNative.tsx
 src/web/
+src/shared/
 src/types/
 dist/
 *.zip
