@@ -1,6 +1,6 @@
 {
   "name": "@scanid-africa/mrz-scanner",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "description": "MRZ scanner for React Native (Expo) and React web — powered by ScanID Africa API",
   "main": "dist/index.js",
   "module": "dist/index.js",
