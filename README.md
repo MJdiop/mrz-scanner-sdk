@@ -40,9 +40,54 @@ Aucune dépendance supplémentaire — `getUserMedia` est natif au navigateur.
 
 ## Démarrage rapide
 
-### 1. Initialiser la licence au démarrage de l'app
+### 1. Scanner un document
 
-`AppInitializer` valide votre clé SDK une fois au démarrage, stocke le token JWT 24h dans `expo-secure-store` et débloque le scanner. Aucun appel réseau n'est fait lors du scan.
+```tsx
+import { useState } from 'react';
+import { Modal } from 'react-native';
+import { MrzScannerNative, type MrzResult } from '@scanid-africa/mrz-scanner';
+
+export function DocumentScanScreen() {
+  const [showScanner, setShowScanner] = useState(false);
+
+  function handleSuccess(result: MrzResult) {
+    setShowScanner(false);
+    console.log(result.fields.surname); // "DIOP"
+    console.log(result.fields.givenNames); // "MBAYE JACQUES"
+    console.log(result.fields.documentNumber); // "XXXXXXXXXX"
+    console.log(result.documentType); // "TD3_PASSPORT"
+  }
+
+  return (
+    <Modal visible={showScanner} animationType="slide" statusBarTranslucent>
+      <MrzScannerNative
+        sdkKey={process.env.EXPO_PUBLIC_SCANID_SDK_KEY!}
+        appId="com.myapp.id"
+        onSuccess={handleSuccess}
+        onError={(err) => console.error(err.message)}
+        onClose={() => setShowScanner(false)}
+      />
+    </Modal>
+  );
+}
+```
+
+Le scan démarre automatiquement dès que la caméra est prête — aucun bouton requis.
+
+Variables d'environnement à ajouter dans `.env` :
+
+```bash
+EXPO_PUBLIC_SCANID_SDK_KEY=sdk_live_xxx
+EXPO_PUBLIC_SCANID_API_URL=https://your-api.com  # optionnel — self-hosted uniquement
+```
+
+Obtenez votre clé SDK sur [scanid.africa](https://scanid.africa).
+
+---
+
+### 2. (Optionnel) Pré-valider la licence au démarrage
+
+`AppInitializer` est un confort UX — il pré-charge la licence avant que l'utilisateur navigue où que ce soit, pour éviter un court spinner dans chaque écran de scan.
 
 ```tsx
 // app/_layout.tsx (Expo Router)
@@ -61,49 +106,6 @@ export default function RootLayout() {
   );
 }
 ```
-
-Variables d'environnement à ajouter dans `.env` :
-
-```bash
-EXPO_PUBLIC_SCANID_SDK_KEY=sdk_live_xxx
-EXPO_PUBLIC_SCANID_API_URL=https://your-api.com  # optionnel — self-hosted uniquement
-```
-
-Obtenez votre clé SDK sur [scanid.africa](https://scanid.africa).
-
----
-
-### 2. Scanner un document
-
-```tsx
-import { useState } from 'react';
-import { Modal } from 'react-native';
-import { MrzScannerNative, type MrzResult } from '@scanid-africa/mrz-scanner';
-
-export function DocumentScanScreen() {
-  const [showScanner, setShowScanner] = useState(false);
-
-  function handleSuccess(result: MrzResult) {
-    setShowScanner(false);
-    console.log(result.fields.surname); // "DIOP"
-    console.log(result.fields.givenNames); // "MBAYE JACQUES"
-    console.log(result.fields.documentNumber); // "XXXXXXXXX"
-    console.log(result.documentType); // "TD3_PASSPORT"
-  }
-
-  return (
-    <Modal visible={showScanner} animationType="slide" statusBarTranslucent>
-      <MrzScannerNative
-        onSuccess={handleSuccess}
-        onError={(err) => console.error(err.message)}
-        onClose={() => setShowScanner(false)}
-      />
-    </Modal>
-  );
-}
-```
-
-Le scan démarre automatiquement dès que la caméra est prête — aucun bouton requis.
 
 ---
 
@@ -155,6 +157,10 @@ const MrzScannerWeb = dynamic(
 | Prop           | Type                          | Défaut                                | Description                                                                            |
 | -------------- | ----------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------- |
 | `onSuccess`    | `(result: MrzResult) => void` | requis                                | Appelé dès qu'une MRZ valide est détectée                                              |
+| `sdkKey`       | `string`                      | requis                                | Clé SDK — format `sdk_live_xxx`, vérifiée directement par ce composant                 |
+| `apiUrl`       | `string`                      | —                                     | URL self-hosted. Absent = cloud ScanID Africa                                          |
+| `appId`        | `string`                      | —                                     | Bundle ID iOS ou Package Name Android                                                  |
+| `onSuccess`    | `(result: MrzResult) => void` | requis                                | Appelé dès qu'une MRZ valide est détectée                                              |
 | `onError`      | `(error: Error) => void`      | —                                     | Appelé après `maxAttempts` échecs                                                      |
 | `onClose`      | `() => void`                  | —                                     | Bouton ✕ pour fermer le scanner                                                        |
 | `hint`         | `string`                      | `"Alignez la zone MRZ dans le cadre"` | Texte affiché sous le cadre                                                            |
@@ -165,6 +171,10 @@ const MrzScannerWeb = dynamic(
 ## Son de succès
 
 Un bip est joué lors d'un scan réussi (bundlé dans le SDK, aucun fichier requis).
+
+## Sécurité de la licence
+
+`MrzScannerNative` vérifie sa clé directement, à chaque montage — il est impossible de l'utiliser sans `sdkKey` valide, avec ou sans `AppInitializer` :
 
 ```tsx
 // Son par défaut (bundlé)
