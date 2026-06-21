@@ -25,6 +25,7 @@
   "author": "ScanID Africa",
   "license": "MIT",
   "repository": {
+    "private": true,
     "type": "git",
     "url": "https://github.com/MJdiop/mrz-scanner-sdk"
   },

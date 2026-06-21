@@ -100,6 +100,7 @@ export function MrzScannerNative({
     apiUrl,
     appId,
   });
+  console.log('🚀 ~ MrzScannerNative ~ appId:', appId);
 
   const cameraRef = useRef<CameraView>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);

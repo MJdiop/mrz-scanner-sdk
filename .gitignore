@@ -87,3 +87,11 @@ nitrogen/
 
 PROPS_DOCUMENTATION.md
 README2.md
+
+src/*.tsx
+src/assets/
+src/native/MrzScannerNative.tsx
+src/web/
+src/types/
+dist/
+*.zip
