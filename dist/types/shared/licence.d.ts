@@ -20,27 +20,6 @@ export interface LicenceStatus {
     expiresAt: string | null;
     error: string | null;
 }
-/**
- * Hook de validation de licence SDK.
- * À utiliser dans l'AppInitializer au démarrage de l'app.
- *
- * - Token stocké dans expo-secure-store (chiffré)
- * - Fallback AsyncStorage si SecureStore absent
- * - Re-validation automatique 5 min avant expiration
- * - Retry réseau automatique toutes les 30s
- *
- * Usage dans AppInitializer :
- * ```tsx
- * const { isLicenceValid, licenceState } = useSdkLicence({
- *   sdkKey: 'sdk_live_xxx',
- *   appId:  'com.myapp.id',
- * })
- *
- * if (licenceState === 'validating') return <SplashScreen />
- * if (!isLicenceValid) return <LicenceErrorScreen />
- * return <AppNavigator />
- * ```
- */
 export declare function useSdkLicence(config: SdkLicenceConfig): {
     licenceState: LicenceState;
     licencePlan: string | null;

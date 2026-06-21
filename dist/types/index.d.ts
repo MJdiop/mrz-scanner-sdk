@@ -1,6 +1,5 @@
 export { MrzScannerNative } from './native/MrzScannerNative';
 export { MrzScannerWeb } from './web/MrzScannerWeb';
-export { AppInitializer } from './native/AppInitializer';
 export { useSdkLicence } from './shared/licence';
 export { mapMlkitResult } from './shared/mrz-mapper';
 export { useScanner } from './shared/useScanner';
